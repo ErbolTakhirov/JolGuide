@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Мои заявки{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+      <div class="d-flex align-items-center gap-3">
+        <div class="step-icon flex-shrink-0"><i class="bi bi-calendar-check"></i></div>
+        <div>
+          <h1 class="fw-bold mb-0 h3">Мои заявки</h1>
+          <p class="text-muted small mb-0">Ваши бронирования гидов</p>
+        </div>
+      </div>
+      <a href="{% url 'guides:list' %}" class="btn btn-accent rounded-pill">
+        <i class="bi bi-plus me-1"></i>Найти гида
+      </a>
+    </div>
+
+    {% if bookings %}
+    <div class="d-flex flex-column gap-3">
+      {% for b in bookings %}
+      <div class="card card-glass p-3 p-md-4">
+        <div class="row align-items-center g-3">
+
+          {# Статус badge #}
+          <div class="col-auto">
+            {% if b.status == 'pending' %}
+              <span class="badge booking-badge-pending fs-6">
+                <i class="bi bi-hourglass-split me-1"></i>Ожидает
+              </span>
+            {% elif b.status == 'accepted' %}
+              <span class="badge booking-badge-accepted fs-6">
+                <i class="bi bi-check-circle me-1"></i>Принята
+              </span>
+            {% else %}
+              <span class="badge booking-badge-declined fs-6">
+                <i class="bi bi-x-circle me-1"></i>Отклонена
+              </span>
+            {% endif %}
+          </div>
+
+          {# Инфо #}
+          <div class="col">
+            <h5 class="fw-semibold mb-1">{{ b.service_name }}</h5>
+            <div class="d-flex flex-wrap gap-3 text-muted small">
+              <span><i class="bi bi-person me-1"></i>{{ b.guide.name }}</span>
+              <span><i class="bi bi-geo-alt me-1"></i>{{ b.guide.city }}</span>
+              <span><i class="bi bi-calendar me-1"></i>{{ b.date|date:"d.m.Y" }}</span>
+              <span><i class="bi bi-clock me-1"></i>Заявка от {{ b.created_at|date:"d.m.Y" }}</span>
+            </div>
+            {% if b.comment %}
+            <p class="small text-muted mt-2 mb-0"><i class="bi bi-chat-text me-1"></i>{{ b.comment }}</p>
+            {% endif %}
+          </div>
+
+          {# Кнопки #}
+          <div class="col-md-auto d-flex gap-2">
+            <a href="{% url 'guides:detail' b.guide.pk %}"
+               class="btn btn-outline-secondary btn-sm rounded-pill">
+              <i class="bi bi-eye me-1"></i>Профиль
+            </a>
+            <a href="{% url 'chats:room' b.guide.user.pk %}"
+               class="btn btn-outline-accent btn-sm rounded-pill">
+              <i class="bi bi-chat me-1"></i>Чат
+            </a>
+          </div>
+
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="card card-glass text-center p-5">
+      <i class="bi bi-calendar-x display-3 text-muted mb-3"></i>
+      <h5 class="fw-semibold">Нет заявок</h5>
+      <p class="text-muted mb-4">Найдите гида и отправьте первую заявку</p>
+      <a href="{% url 'guides:list' %}" class="btn btn-accent rounded-pill px-4">
+        <i class="bi bi-people me-1"></i>Найти гида
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}

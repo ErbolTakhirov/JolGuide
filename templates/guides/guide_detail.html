@@ -87,12 +87,41 @@
         {% endif %}
 
         <!-- Reviews -->
-        <div class="card card-glass p-4">
+        <div class="card card-glass p-4 mt-4">
           <h5 class="fw-bold mb-3">
             <i class="bi bi-chat-square-heart me-2 text-accent"></i>
             Отзывы
             <span class="badge bg-accent-subtle text-accent-emphasis ms-2">{{ reviews_count }}</span>
           </h5>
+
+          {% if can_review %}
+          <div class="bg-body-tertiary rounded p-3 mb-4">
+            <h6 class="fw-bold mb-2">Оставить отзыв</h6>
+            <form action="{% url 'reviews:add' guide.id %}" method="post">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label class="form-label small">Оценка</label>
+                <select name="rating" class="form-select" required>
+                  <option value="5" selected>5 - Отлично</option>
+                  <option value="4">4 - Хорошо</option>
+                  <option value="3">3 - Нормально</option>
+                  <option value="2">2 - Плохо</option>
+                  <option value="1">1 - Ужасно</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label small">Ваш комментарий (необязательно)</label>
+                <textarea name="text" class="form-control" rows="3" placeholder="Расскажите впечатления от экскурсии..."></textarea>
+              </div>
+              <button type="submit" class="btn btn-accent btn-sm rounded-pill px-4">Отправить отзыв</button>
+            </form>
+          </div>
+          {% elif has_reviewed %}
+            <div class="alert alert-success small py-2">
+              <i class="bi bi-check-circle me-1"></i> Вы уже оставили отзыв об этом гиде.
+            </div>
+          {% endif %}
+
           {% for review in reviews %}
           <div class="review-item {% if not forloop.last %}border-bottom pb-3 mb-3{% endif %}">
             <div class="d-flex justify-content-between align-items-center mb-2">

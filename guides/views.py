@@ -42,9 +42,30 @@ def guide_detail(request, guide_id):
     reviews = Review.objects.filter(guide=guide).select_related('tourist')
     reviews_count = reviews.count()
 
+    reviews_count = reviews.count()
+
+    can_review = False
+    has_reviewed = False
+    if request.user.is_authenticated:
+        # Avoid circular imports by importing inside function or from another module
+        # It's better to just do the checks directly here to avoid headache
+        from bookings.models import BookingRequest
+        has_reviewed = reviews.filter(tourist=request.user).exists()
+        can_review = (
+            request.user.role == 'tourist'
+            and not has_reviewed
+            and BookingRequest.objects.filter(
+                tourist=request.user,
+                guide=guide,
+                status=BookingRequest.Status.ACCEPTED,
+            ).exists()
+        )
+
     context = {
         'guide': guide,
         'reviews': reviews,
         'reviews_count': reviews_count,
+        'can_review': can_review,
+        'has_reviewed': has_reviewed,
     }
     return render(request, 'guides/guide_detail.html', context)

@@ -6,14 +6,24 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-jolgit-demo-mvp-change-me-in-production'
+# Читаем переменные окружения, либо используем фоллбэки для локальной разработки
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-jolgit-demo-mvp-change-me-in-production')
 
-DEBUG = True
+# DEBUG=True только если явно сказано в окружении
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['*']
+# ALLOWED_HOSTS разделяем запятой, по умолчанию '*' для локалки
+allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', '*')
+ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(',') if host.strip()]
+
+# Для Render (нужно для POST-запросов / авторизации)
+csrf_env = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
+CSRF_TRUSTED_ORIGINS = [url.strip() for url in csrf_env.split(',') if url.strip()]
+
 
 # ---------- Applications ----------
 INSTALLED_APPS = [
+    'whitenoise.runserver_nostatic',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

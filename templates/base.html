@@ -37,12 +37,12 @@
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#">
+            <a class="nav-link" href="{% url 'guides:list' %}">
               <i class="bi bi-people me-1"></i>Гиды
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#">
+            <a class="nav-link" href="{% url 'matching:match' %}">
               <i class="bi bi-stars me-1"></i>AI Match
             </a>
           </li>
@@ -57,10 +57,13 @@
               </a>
               <ul class="dropdown-menu dropdown-menu-end">
                 {% if user.role == 'tourist' %}
-                  <li><a class="dropdown-item" href="#"><i class="bi bi-speedometer2 me-2"></i>Кабинет туриста</a></li>
+                  <li><a class="dropdown-item" href="{% url 'bookings:tourist_dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Мои заявки</a></li>
                 {% elif user.role == 'guide' %}
-                  <li><a class="dropdown-item" href="#"><i class="bi bi-speedometer2 me-2"></i>Кабинет гида</a></li>
+                  <li><a class="dropdown-item" href="{% url 'bookings:guide_dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Кабинет гида</a></li>
+                {% elif user.role == 'admin' or user.is_staff %}
+                  <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="bi bi-shield-lock me-2"></i>Админ-панель</a></li>
                 {% endif %}
+                <li><a class="dropdown-item" href="{% url 'chats:inbox' %}"><i class="bi bi-chat-dots me-2"></i>Сообщения</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
                   <a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">

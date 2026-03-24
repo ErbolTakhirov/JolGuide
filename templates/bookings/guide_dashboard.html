@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}Кабинет гида{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <div class="step-icon flex-shrink-0"><i class="bi bi-speedometer2"></i></div>
+      <div>
+        <h1 class="fw-bold mb-0 h3">Кабинет гида</h1>
+        <p class="text-muted small mb-0">{{ guide.name }} · {{ guide.city }}</p>
+      </div>
+    </div>
+
+    {# Статистика #}
+    {% with pending=bookings|length %}
+    <div class="row g-3 mb-4">
+      <div class="col-sm-4">
+        <div class="card card-glass text-center p-3">
+          <div class="h2 fw-bold text-accent mb-0">{{ bookings|length }}</div>
+          <div class="small text-muted">Всего заявок</div>
+        </div>
+      </div>
+      <div class="col-sm-4">
+        <div class="card card-glass text-center p-3">
+          <div class="h2 fw-bold text-warning mb-0">
+            {{ bookings|dictsort:"status"|length }}
+          </div>
+          <div class="small text-muted">В ожидании</div>
+        </div>
+      </div>
+      <div class="col-sm-4">
+        <div class="card card-glass text-center p-3">
+          <div class="h2 fw-bold text-success mb-0">{{ guide.rating }}/5</div>
+          <div class="small text-muted">Рейтинг</div>
+        </div>
+      </div>
+    </div>
+    {% endwith %}
+
+    {% if bookings %}
+    <div class="d-flex flex-column gap-3">
+      {% for b in bookings %}
+      <div class="card card-glass p-3 p-md-4">
+        <div class="row align-items-center g-3">
+
+          {# Статус #}
+          <div class="col-auto">
+            {% if b.status == 'pending' %}
+              <span class="badge booking-badge-pending fs-6">
+                <i class="bi bi-hourglass-split me-1"></i>Ожидает
+              </span>
+            {% elif b.status == 'accepted' %}
+              <span class="badge booking-badge-accepted fs-6">
+                <i class="bi bi-check-circle me-1"></i>Принята
+              </span>
+            {% else %}
+              <span class="badge booking-badge-declined fs-6">
+                <i class="bi bi-x-circle me-1"></i>Отклонена
+              </span>
+            {% endif %}
+          </div>
+
+          {# Инфо #}
+          <div class="col">
+            <h5 class="fw-semibold mb-1">{{ b.service_name }}</h5>
+            <div class="d-flex flex-wrap gap-3 text-muted small">
+              <span><i class="bi bi-person me-1"></i>{{ b.tourist.username }}</span>
+              <span><i class="bi bi-envelope me-1"></i>{{ b.tourist.email }}</span>
+              <span><i class="bi bi-calendar me-1"></i>{{ b.date|date:"d.m.Y" }}</span>
+            </div>
+            {% if b.comment %}
+            <p class="small text-muted mt-2 mb-0">
+              <i class="bi bi-chat-text me-1"></i>{{ b.comment }}
+            </p>
+            {% endif %}
+          </div>
+
+          {# Кнопки действий #}
+          <div class="col-md-auto">
+            {% if b.status == 'pending' %}
+            <div class="d-flex gap-2">
+              <a href="{% url 'bookings:update_status' b.pk 'accepted' %}"
+                 class="btn btn-success btn-sm rounded-pill"
+                 onclick="return confirm('Принять заявку?')">
+                <i class="bi bi-check-lg me-1"></i>Принять
+              </a>
+              <a href="{% url 'bookings:update_status' b.pk 'declined' %}"
+                 class="btn btn-outline-danger btn-sm rounded-pill"
+                 onclick="return confirm('Отклонить заявку?')">
+                <i class="bi bi-x-lg me-1"></i>Отклонить
+              </a>
+            </div>
+            {% endif %}
+            <div class="mt-2">
+              <a href="{% url 'chats:room' b.tourist.pk %}"
+                 class="btn btn-outline-accent btn-sm rounded-pill">
+                <i class="bi bi-chat me-1"></i>Написать
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="card card-glass text-center p-5">
+      <i class="bi bi-inbox display-3 text-muted mb-3"></i>
+      <h5 class="fw-semibold">Нет заявок</h5>
+      <p class="text-muted mb-0">Как только туристы оставят заявки — они появятся здесь.</p>
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AI Match — Подбор гида{% endblock %}
+
+{% block content %}
+
+{# ══ HERO ══ #}
+<section class="match-hero py-5">
+  <div class="container">
+    <div class="row justify-content-center text-center mb-5">
+      <div class="col-lg-7">
+        <span class="badge bg-accent-subtle text-accent-emphasis px-3 py-2 mb-3 rounded-pill">
+          <i class="bi bi-stars me-1"></i>Powered by Gemini AI
+        </span>
+        <h1 class="fw-800 display-5 mb-3">
+          Найди <span class="text-gradient">идеального гида</span>
+        </h1>
+        <p class="lead text-muted">
+          Опиши своё путешествие — AI подберёт лучших проводников с объяснением.
+        </p>
+      </div>
+    </div>
+
+    {# ══ FORM ══ #}
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="card card-glass p-4 mb-4">
+          <form method="post" id="matchForm">
+            {% csrf_token %}
+            <label for="prompt" class="form-label fw-semibold mb-2">
+              <i class="bi bi-pencil-square me-1 text-accent"></i>Расскажите о своём запросе
+            </label>
+            <textarea
+              id="prompt"
+              name="prompt"
+              class="form-control match-textarea mb-3"
+              rows="4"
+              placeholder="Например: хочу пешую прогулку по Бишкеку с русскоязычным гидом, бюджет до $30 в день, интересует история и архитектура…"
+              required>{{ prompt }}</textarea>
+
+            {% if error %}
+            <div class="alert alert-danger small py-2">
+              <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+            </div>
+            {% endif %}
+
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-accent rounded-pill px-4" id="submitBtn">
+                <i class="bi bi-stars me-1"></i>Подобрать гидов
+              </button>
+              {% if prompt %}
+              <button type="button" class="btn btn-outline-secondary rounded-pill"
+                      onclick="document.getElementById('prompt').value=''; this.form.submit()">
+                <i class="bi bi-arrow-counterclockwise me-1"></i>Сбросить
+              </button>
+              {% endif %}
+            </div>
+          </form>
+        </div>
+
+        {# ══ TIPS (только когда нет результатов) ══ #}
+        {% if not results and not prompt %}
+        <div class="row g-3 text-center">
+          <div class="col-md-4">
+            <div class="card card-glass p-3 h-100">
+              <i class="bi bi-geo-alt text-accent fs-3 mb-2"></i>
+              <p class="small mb-0">Укажи <strong>город</strong> или регион куда едешь</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card card-glass p-3 h-100">
+              <i class="bi bi-cash-coin text-accent fs-3 mb-2"></i>
+              <p class="small mb-0">Напиши <strong>бюджет</strong> и предпочтения по цене</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card card-glass p-3 h-100">
+              <i class="bi bi-translate text-accent fs-3 mb-2"></i>
+              <p class="small mb-0">Укажи <strong>язык</strong> общения с гидом</p>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ══ RESULTS ══ #}
+{% if results %}
+<section class="py-5 bg-body-secondary">
+  <div class="container">
+    <div class="text-center mb-4">
+      <h2 class="fw-bold">
+        <i class="bi bi-trophy me-2 text-accent"></i>Топ-{{ results|length }} гидов для вас
+      </h2>
+      <p class="text-muted">Результаты подобраны по вашему запросу</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+      {% for item in results %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card card-glass h-100 overflow-hidden match-result-card">
+
+          {# Место / medalка #}
+          <div class="match-rank rank-{{ forloop.counter }}">
+            {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% else %}🥉{% endif %}
+          </div>
+
+          {# Фото гида #}
+          <div class="guide-card-photo d-flex align-items-center justify-content-center">
+            {% if item.guide.photo %}
+              <img src="{{ item.guide.photo.url }}" alt="{{ item.guide.name }}"
+                   class="w-100 h-100" style="object-fit:cover">
+            {% else %}
+              <i class="bi bi-person-bounding-box display-1 text-muted"></i>
+            {% endif %}
+          </div>
+
+          <div class="card-body">
+            {# Имя + бейджи #}
+            <div class="d-flex align-items-center mb-1">
+              <h5 class="card-title fw-bold mb-0">{{ item.guide.name }}</h5>
+              {% if item.guide.is_verified %}
+                <span class="badge bg-success ms-2">
+                  <i class="bi bi-patch-check-fill"></i>
+                </span>
+              {% endif %}
+            </div>
+
+            <p class="text-muted small mb-2">
+              <i class="bi bi-geo-alt me-1"></i>{{ item.guide.city }}
+              <span class="mx-1">·</span>
+              <i class="bi bi-translate me-1"></i>{{ item.guide.languages }}
+            </p>
+
+            {# AI-Score прогресс-бар #}
+            <div class="mb-3">
+              <div class="d-flex justify-content-between small mb-1">
+                <span class="fw-semibold text-accent">AI-совпадение</span>
+                <span class="fw-bold">{{ item.score|floatformat:0 }}%</span>
+              </div>
+              <div class="progress" style="height:6px; border-radius:10px;">
+                <div class="progress-bar bg-gradient-accent"
+                     style="width:{% widthratio item.score 1 100 %}%;"></div>
+              </div>
+            </div>
+
+            {# Reason #}
+            <div class="match-reason mb-2">
+              <i class="bi bi-check-circle-fill text-success me-1"></i>
+              <span class="small">{{ item.reason }}</span>
+            </div>
+
+            {# Compromise #}
+            {% if item.compromise %}
+            <div class="match-compromise mb-3">
+              <i class="bi bi-info-circle-fill text-warning me-1"></i>
+              <span class="small text-muted">{{ item.compromise }}</span>
+            </div>
+            {% endif %}
+
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fw-bold text-accent">от ${{ item.guide.price_from }}</span>
+              <div class="text-warning small">
+                {% for _ in "12345" %}
+                  {% if forloop.counter <= item.guide.rating %}
+                    <i class="bi bi-star-fill"></i>
+                  {% else %}
+                    <i class="bi bi-star"></i>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer bg-transparent border-0 pb-3 px-3">
+            <a href="{% url 'guides:detail' item.guide.pk %}"
+               class="btn btn-outline-accent btn-sm w-100 rounded-pill">
+              <i class="bi bi-eye me-1"></i>Профиль гида
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {# CTA под результатами #}
+    <div class="text-center mt-5">
+      <p class="text-muted mb-3">Не то, что искали?</p>
+      <a href="{% url 'guides:list' %}" class="btn btn-outline-secondary rounded-pill px-4">
+        <i class="bi bi-grid me-1"></i>Смотреть всех гидов
+      </a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Показываем спиннер при отправке формы
+  document.getElementById('matchForm').addEventListener('submit', function() {
+    const btn = document.getElementById('submitBtn');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Анализирую…';
+    btn.disabled = true;
+  });
+</script>
+{% endblock %}
