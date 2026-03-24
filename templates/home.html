@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+<!-- ═══ HERO SECTION ═══ -->
+<section class="hero-section">
+  <div class="hero-overlay"></div>
+  <div class="container position-relative" style="z-index:2">
+    <div class="row min-vh-75 align-items-center">
+      <div class="col-lg-7">
+        <span class="badge bg-accent-subtle text-accent-emphasis px-3 py-2 mb-3 rounded-pill">
+          <i class="bi bi-stars me-1"></i>AI-подбор гидов
+        </span>
+        <h1 class="hero-title display-3 fw-800 mb-3">
+          Найди <span class="text-gradient">идеального гида</span><br>
+          для своего путешествия
+        </h1>
+        <p class="hero-subtitle lead text-muted mb-4" style="max-width:540px">
+          JolGit подбирает локальных гидов с помощью AI. Просто опиши,
+          что хочешь увидеть — мы найдём лучшего проводника в Бишкеке,
+          Алматы или Ташкенте.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+          <a href="#" class="btn btn-accent btn-lg px-4 rounded-pill shadow-sm">
+            <i class="bi bi-stars me-2"></i>AI Match
+          </a>
+          <a href="#" class="btn btn-outline-secondary btn-lg px-4 rounded-pill">
+            <i class="bi bi-people me-2"></i>Все гиды
+          </a>
+        </div>
+      </div>
+      <div class="col-lg-5 d-none d-lg-block text-center">
+        <div class="hero-illustration">
+          <i class="bi bi-globe-central-south-asia"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ HOW IT WORKS ═══ -->
+<section class="py-5" id="how-it-works">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="fw-bold">Как это работает</h2>
+      <p class="text-muted">Три простых шага до идеального путешествия</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="card card-glass h-100 text-center p-4">
+          <div class="step-icon mx-auto mb-3">
+            <i class="bi bi-pencil-square"></i>
+          </div>
+          <h5 class="fw-semibold">1. Опиши запрос</h5>
+          <p class="text-muted small mb-0">
+            Расскажи, что хочешь увидеть, какой бюджет и на каком языке общаться.
+          </p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card card-glass h-100 text-center p-4">
+          <div class="step-icon mx-auto mb-3">
+            <i class="bi bi-cpu"></i>
+          </div>
+          <h5 class="fw-semibold">2. AI подбирает</h5>
+          <p class="text-muted small mb-0">
+            Gemini анализирует профили гидов и выбирает лучших кандидатов с объяснениями.
+          </p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card card-glass h-100 text-center p-4">
+          <div class="step-icon mx-auto mb-3">
+            <i class="bi bi-chat-heart"></i>
+          </div>
+          <h5 class="fw-semibold">3. Бронируй</h5>
+          <p class="text-muted small mb-0">
+            Свяжись с гидом в чате и забронируй экскурсию прямо на платформе.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ DEMO GUIDES ═══ -->
+<section class="py-5 bg-body-secondary" id="demo-guides">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="fw-bold">Популярные гиды</h2>
+      <p class="text-muted">Лучшие проводники ждут вас</p>
+    </div>
+    <div class="row g-4">
+      {% for guide in demo_guides %}
+      <div class="col-md-4">
+        <div class="card card-glass h-100 overflow-hidden">
+          <div class="card-img-top guide-card-photo d-flex align-items-center justify-content-center">
+            {% if guide.photo %}
+              <img src="{{ guide.photo.url }}" alt="{{ guide.name }}" class="w-100 h-100" style="object-fit:cover">
+            {% else %}
+              <i class="bi bi-person-bounding-box display-1 text-muted"></i>
+            {% endif %}
+          </div>
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-2">
+              <h5 class="card-title mb-0 fw-semibold">{{ guide.name }}</h5>
+              {% if guide.is_verified %}
+                <span class="badge bg-success ms-2"><i class="bi bi-patch-check-fill"></i> Verified</span>
+              {% endif %}
+            </div>
+            <p class="text-muted small mb-1">
+              <i class="bi bi-geo-alt me-1"></i>{{ guide.city }}
+              <span class="mx-1">·</span>
+              <i class="bi bi-translate me-1"></i>{{ guide.languages }}
+            </p>
+            <p class="small mb-2">{{ guide.bio|truncatewords:20 }}</p>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fw-semibold text-accent">от ${{ guide.price_from }}</span>
+              <span class="text-warning small">
+                {% for _ in "12345" %}
+                  {% if forloop.counter <= guide.rating %}
+                    <i class="bi bi-star-fill"></i>
+                  {% else %}
+                    <i class="bi bi-star"></i>
+                  {% endif %}
+                {% endfor %}
+                <span class="text-muted ms-1">{{ guide.rating }}</span>
+              </span>
+            </div>
+          </div>
+          <div class="card-footer bg-transparent border-0 pb-3 px-3">
+            <a href="#" class="btn btn-outline-accent btn-sm w-100 rounded-pill">
+              Подробнее
+            </a>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12 text-center py-5">
+        <i class="bi bi-people display-3 text-muted"></i>
+        <p class="text-muted mt-3">Пока нет гидов. Запустите <code>python manage.py seed_demo</code></p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CTA ═══ -->
+<section class="py-5">
+  <div class="container">
+    <div class="card card-glass-accent text-center p-5">
+      <h2 class="fw-bold mb-3">Готов к приключению?</h2>
+      <p class="text-muted mb-4">Зарегистрируйся и найди гида за 2 минуты с помощью AI</p>
+      <div class="d-flex justify-content-center gap-3">
+        <a href="{% url 'accounts:register' %}" class="btn btn-accent btn-lg px-5 rounded-pill shadow">
+          <i class="bi bi-rocket-takeoff me-2"></i>Начать бесплатно
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

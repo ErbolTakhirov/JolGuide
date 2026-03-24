@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Вход{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-6 col-lg-5">
+        <div class="card card-glass p-4">
+          <div class="text-center mb-4">
+            <div class="auth-icon mx-auto mb-3">
+              <i class="bi bi-box-arrow-in-right"></i>
+            </div>
+            <h2 class="fw-bold">Вход</h2>
+            <p class="text-muted small">Рады вас снова видеть!</p>
+          </div>
+
+          <form method="post" novalidate>
+            {% csrf_token %}
+            {% for field in form %}
+              <div class="mb-3">
+                <label for="{{ field.id_for_label }}" class="form-label fw-medium">
+                  {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.errors %}
+                  {% for error in field.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                  {% endfor %}
+                {% endif %}
+              </div>
+            {% endfor %}
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger small py-2">
+                {% for error in form.non_field_errors %}
+                  <div>{{ error }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-accent w-100 rounded-pill py-2 mt-2">
+              <i class="bi bi-box-arrow-in-right me-1"></i>Войти
+            </button>
+          </form>
+
+          <p class="text-center text-muted small mt-3 mb-0">
+            Нет аккаунта?
+            <a href="{% url 'accounts:register' %}" class="text-accent fw-semibold">Зарегистрируйтесь</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

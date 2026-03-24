@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Каталог гидов{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <!-- Header -->
+    <div class="text-center mb-4">
+      <h1 class="fw-bold"><i class="bi bi-people me-2"></i>Каталог гидов</h1>
+      <p class="text-muted">Найдите идеального проводника для вашего путешествия</p>
+    </div>
+
+    <!-- ═══ FILTERS ═══ -->
+    <div class="card card-glass p-3 mb-4">
+      <form method="get" class="row g-3 align-items-end" id="filterForm">
+        <div class="col-md-3">
+          <label class="form-label fw-medium small">
+            <i class="bi bi-geo-alt me-1"></i>Город
+          </label>
+          <select name="city" class="form-select form-select-sm">
+            <option value="">Все города</option>
+            {% for city in all_cities %}
+              <option value="{{ city }}" {% if city == current_city %}selected{% endif %}>
+                {{ city }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-medium small">
+            <i class="bi bi-translate me-1"></i>Язык
+          </label>
+          <select name="language" class="form-select form-select-sm">
+            <option value="">Все языки</option>
+            <option value="ru" {% if current_language == 'ru' %}selected{% endif %}>Русский</option>
+            <option value="en" {% if current_language == 'en' %}selected{% endif %}>English</option>
+            <option value="de" {% if current_language == 'de' %}selected{% endif %}>Deutsch</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-medium small">
+            <i class="bi bi-patch-check me-1"></i>Статус
+          </label>
+          <select name="verified" class="form-select form-select-sm">
+            <option value="">Все</option>
+            <option value="1" {% if current_verified == '1' %}selected{% endif %}>Только верифицированные</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+          <button type="submit" class="btn btn-accent btn-sm rounded-pill flex-grow-1">
+            <i class="bi bi-search me-1"></i>Найти
+          </button>
+          <a href="{% url 'guides:list' %}" class="btn btn-outline-secondary btn-sm rounded-pill">
+            <i class="bi bi-x-lg"></i>
+          </a>
+        </div>
+      </form>
+    </div>
+
+    <!-- ═══ RESULTS ═══ -->
+    <p class="text-muted small mb-3">Найдено гидов: <strong>{{ guides|length }}</strong></p>
+
+    <div class="row g-4">
+      {% for guide in guides %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card card-glass h-100 overflow-hidden">
+          <div class="card-img-top guide-card-photo d-flex align-items-center justify-content-center">
+            {% if guide.photo %}
+              <img src="{{ guide.photo.url }}" alt="{{ guide.name }}"
+                   class="w-100 h-100" style="object-fit:cover">
+            {% else %}
+              <i class="bi bi-person-bounding-box display-1 text-muted"></i>
+            {% endif %}
+          </div>
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-2">
+              <h5 class="card-title mb-0 fw-semibold">{{ guide.name }}</h5>
+              {% if guide.is_verified %}
+                <span class="badge bg-success ms-2 small">
+                  <i class="bi bi-patch-check-fill"></i> Verified
+                </span>
+              {% endif %}
+            </div>
+            <p class="text-muted small mb-1">
+              <i class="bi bi-geo-alt me-1"></i>{{ guide.city }}
+              <span class="mx-1">·</span>
+              <i class="bi bi-translate me-1"></i>{{ guide.languages }}
+            </p>
+            <p class="small mb-2 text-truncate-2">{{ guide.bio|truncatewords:20 }}</p>
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fw-semibold text-accent">от ${{ guide.price_from }}</span>
+              <span class="text-warning small">
+                {% for _ in "12345" %}
+                  {% if forloop.counter <= guide.rating %}
+                    <i class="bi bi-star-fill"></i>
+                  {% else %}
+                    <i class="bi bi-star"></i>
+                  {% endif %}
+                {% endfor %}
+                <span class="text-muted ms-1">{{ guide.rating }}</span>
+              </span>
+            </div>
+          </div>
+          <div class="card-footer bg-transparent border-0 pb-3 px-3">
+            <a href="{% url 'guides:detail' guide.pk %}"
+               class="btn btn-outline-accent btn-sm w-100 rounded-pill">
+              <i class="bi bi-eye me-1"></i>Подробнее
+            </a>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12 text-center py-5">
+        <i class="bi bi-search display-3 text-muted"></i>
+        <p class="text-muted mt-3">Гиды не найдены. Попробуйте изменить фильтры.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

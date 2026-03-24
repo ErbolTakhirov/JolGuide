@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ guide.name }}{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+      <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}" class="text-accent">Главная</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'guides:list' %}" class="text-accent">Гиды</a></li>
+        <li class="breadcrumb-item active">{{ guide.name }}</li>
+      </ol>
+    </nav>
+
+    <div class="row g-4">
+      <!-- ═══ LEFT: Photo + Info ═══ -->
+      <div class="col-lg-4">
+        <div class="card card-glass overflow-hidden">
+          <div class="guide-detail-photo d-flex align-items-center justify-content-center">
+            {% if guide.photo %}
+              <img src="{{ guide.photo.url }}" alt="{{ guide.name }}"
+                   class="w-100 h-100" style="object-fit:cover">
+            {% else %}
+              <i class="bi bi-person-bounding-box display-1 text-muted"></i>
+            {% endif %}
+          </div>
+          <div class="card-body text-center">
+            <h3 class="fw-bold mb-1">{{ guide.name }}</h3>
+            {% if guide.is_verified %}
+              <span class="badge bg-success mb-2">
+                <i class="bi bi-patch-check-fill me-1"></i>Верифицирован
+              </span>
+            {% endif %}
+            <p class="text-muted small mb-2">
+              <i class="bi bi-geo-alt me-1"></i>{{ guide.city }}
+              <span class="mx-1">·</span>
+              <i class="bi bi-translate me-1"></i>{{ guide.languages }}
+            </p>
+            <div class="text-warning mb-3">
+              {% for _ in "12345" %}
+                {% if forloop.counter <= guide.rating %}
+                  <i class="bi bi-star-fill"></i>
+                {% else %}
+                  <i class="bi bi-star"></i>
+                {% endif %}
+              {% endfor %}
+              <span class="text-muted ms-1 small">{{ guide.rating }} ({{ reviews_count }} отзывов)</span>
+            </div>
+            <div class="price-badge mb-3">
+              <span class="h4 fw-bold text-accent">от ${{ guide.price_from }}</span>
+            </div>
+            <!-- Action Buttons -->
+            <div class="d-grid gap-2">
+              {% if user.is_authenticated %}
+                <a href="{% url 'chats:room' guide.user.pk %}" class="btn btn-accent rounded-pill">
+                  <i class="bi bi-chat-dots me-2"></i>Написать
+                </a>
+                <a href="{% url 'bookings:create' guide.pk %}" class="btn btn-outline-accent rounded-pill">
+                  <i class="bi bi-calendar-check me-2"></i>Забронировать
+                </a>
+              {% else %}
+                <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn btn-accent rounded-pill">
+                  <i class="bi bi-box-arrow-in-right me-2"></i>Войдите, чтобы связаться
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ RIGHT: Details + Reviews ═══ -->
+      <div class="col-lg-8">
+        <!-- Bio -->
+        <div class="card card-glass p-4 mb-4">
+          <h5 class="fw-bold mb-3"><i class="bi bi-person-lines-fill me-2 text-accent"></i>О гиде</h5>
+          <p class="mb-0">{{ guide.bio|linebreaksbr }}</p>
+        </div>
+
+        <!-- Services -->
+        {% if guide.services_text %}
+        <div class="card card-glass p-4 mb-4">
+          <h5 class="fw-bold mb-3"><i class="bi bi-briefcase me-2 text-accent"></i>Услуги</h5>
+          <p class="mb-0">{{ guide.services_text|linebreaksbr }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Reviews -->
+        <div class="card card-glass p-4">
+          <h5 class="fw-bold mb-3">
+            <i class="bi bi-chat-square-heart me-2 text-accent"></i>
+            Отзывы
+            <span class="badge bg-accent-subtle text-accent-emphasis ms-2">{{ reviews_count }}</span>
+          </h5>
+          {% for review in reviews %}
+          <div class="review-item {% if not forloop.last %}border-bottom pb-3 mb-3{% endif %}">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div>
+                <strong class="small">{{ review.tourist.username }}</strong>
+                <div class="text-warning small">
+                  {% for _ in "12345" %}
+                    {% if forloop.counter <= review.rating %}
+                      <i class="bi bi-star-fill"></i>
+                    {% else %}
+                      <i class="bi bi-star"></i>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+              <small class="text-muted">{{ review.created_at|date:"d.m.Y" }}</small>
+            </div>
+            {% if review.text %}
+              <p class="small mb-0 text-muted">{{ review.text }}</p>
+            {% endif %}
+          </div>
+          {% empty %}
+          <p class="text-muted small mb-0">Отзывов пока нет. Будьте первым!</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
