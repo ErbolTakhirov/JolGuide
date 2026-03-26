@@ -60,6 +60,7 @@
                   <li><a class="dropdown-item" href="{% url 'bookings:tourist_dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Мои заявки</a></li>
                 {% elif user.role == 'guide' %}
                   <li><a class="dropdown-item" href="{% url 'bookings:guide_dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Кабинет гида</a></li>
+                  <li><a class="dropdown-item" href="{% url 'guides:verification_status' %}"><i class="bi bi-shield-check me-2"></i>Верификация</a></li>
                 {% elif user.role == 'admin' or user.is_staff %}
                   <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="bi bi-shield-lock me-2"></i>Админ-панель</a></li>
                 {% endif %}

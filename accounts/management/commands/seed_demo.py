@@ -9,6 +9,7 @@ from reviews.models import Review
 from chats.models import ChatMessage
 from bookings.models import BookingRequest
 from matching.models import MatchRequest, MatchResult
+from guides.models import GuideVerificationRequest
 
 User = get_user_model()
 
@@ -153,6 +154,23 @@ class Command(BaseCommand):
         farrukh = guide_objects[2]
 
         self.stdout.write('Creating 3 Bookings...')
+        
+        # Add a verification request for Azamat
+        GuideVerificationRequest.objects.create(
+            guide=azamat,
+            legal_name='Азамат Бейшеналиев',
+            display_name='Азамат',
+            phone='+996 555 000111',
+            city='Бишкек',
+            languages='ru, en',
+            bio='Коренной бишкекчанин',
+            service_types='Пешие туры',
+            agreed_to_safety_rules=True,
+            status=GuideVerificationRequest.Status.APPROVED_LIMITED,
+            reviewed_by=g_owner,
+            reviewed_at=timezone.now()
+        )
+
         b1 = BookingRequest.objects.create(
             tourist=t1, guide=azamat, service_name='Пеший тур', 
             date=timezone.now().date() + timedelta(days=2),

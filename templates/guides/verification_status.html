@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Статус верификации{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container" style="max-width: 600px;">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+      <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}" class="text-accent">Главная</a></li>
+        <li class="breadcrumb-item active">Статус верификации</li>
+      </ol>
+    </nav>
+
+    <div class="card card-glass p-4 text-center">
+      <div class="step-icon mx-auto mb-3">
+        <i class="bi bi-shield-check"></i>
+      </div>
+      <h2 class="fw-bold mb-4">Статус верификации</h2>
+
+      {% if verification %}
+        <!-- Status badge -->
+        {% if verification.status == 'submitted' %}
+          <span class="badge bg-primary fs-6 px-3 py-2 mb-3">
+            <i class="bi bi-clock me-1"></i> Отправлена
+          </span>
+          <p class="text-muted">Ваша заявка отправлена и ожидает проверки.</p>
+
+        {% elif verification.status == 'under_review' %}
+          <span class="badge bg-warning text-dark fs-6 px-3 py-2 mb-3">
+            <i class="bi bi-search me-1"></i> На рассмотрении
+          </span>
+          <p class="text-muted">Администратор проверяет вашу заявку. Обычно это занимает 1–3 дня.</p>
+
+        {% elif verification.status == 'approved_limited' %}
+          <span class="badge bg-success fs-6 px-3 py-2 mb-3">
+            <i class="bi bi-patch-check-fill me-1"></i> Одобрена
+          </span>
+          <p class="text-muted">Поздравляем! Ваш профиль верифицирован. Бейдж «Верифицирован» отображается на вашей странице.</p>
+
+        {% elif verification.status == 'rejected' %}
+          <span class="badge bg-danger fs-6 px-3 py-2 mb-3">
+            <i class="bi bi-x-circle me-1"></i> Отклонена
+          </span>
+          <p class="text-muted">К сожалению, ваша заявка была отклонена. Вы можете подать новую заявку.</p>
+          <a href="{% url 'guides:verification_submit' %}" class="btn btn-accent rounded-pill mt-2">
+            <i class="bi bi-arrow-repeat me-2"></i>Подать заново
+          </a>
+
+        {% elif verification.status == 'suspended' %}
+          <span class="badge bg-dark fs-6 px-3 py-2 mb-3">
+            <i class="bi bi-ban me-1"></i> Приостановлена
+          </span>
+          <p class="text-muted">Ваша верификация приостановлена. Обратитесь в поддержку для получения информации.</p>
+
+        {% else %}
+          <span class="badge bg-secondary fs-6 px-3 py-2 mb-3">
+            <i class="bi bi-pencil me-1"></i> Черновик
+          </span>
+          <p class="text-muted">Заявка сохранена как черновик.</p>
+        {% endif %}
+
+        <!-- Details card -->
+        <div class="card bg-body-tertiary mt-4 p-3 text-start">
+          <div class="row g-2 small">
+            <div class="col-6"><strong>Имя:</strong></div>
+            <div class="col-6">{{ verification.display_name }}</div>
+            <div class="col-6"><strong>Город:</strong></div>
+            <div class="col-6">{{ verification.city }}</div>
+            <div class="col-6"><strong>Языки:</strong></div>
+            <div class="col-6">{{ verification.languages }}</div>
+            <div class="col-6"><strong>Подано:</strong></div>
+            <div class="col-6">{{ verification.created_at|date:"d.m.Y H:i" }}</div>
+            {% if verification.reviewed_at %}
+            <div class="col-6"><strong>Проверено:</strong></div>
+            <div class="col-6">{{ verification.reviewed_at|date:"d.m.Y H:i" }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+      {% else %}
+        <!-- No request yet -->
+        <div class="py-4">
+          <i class="bi bi-shield-exclamation display-3 text-muted mb-3 d-block"></i>
+          <p class="text-muted mb-4">Вы ещё не подали заявку на верификацию.</p>
+          <a href="{% url 'guides:verification_submit' %}" class="btn btn-accent btn-lg rounded-pill">
+            <i class="bi bi-shield-check me-2"></i>Подать заявку
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

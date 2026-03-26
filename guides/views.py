@@ -1,6 +1,10 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from accounts.models import GuideProfile
 from reviews.models import Review
+from .models import GuideVerificationRequest, GuideReport
+from .forms import VerificationRequestForm, GuideReportForm
 
 
 def guide_list(request):
@@ -37,20 +41,23 @@ def guide_list(request):
 
 
 def guide_detail(request, guide_id):
-    """Профиль гида с отзывами."""
+    """Профиль гида с отзывами, бейджем верификации и формой жалобы."""
     guide = get_object_or_404(GuideProfile, pk=guide_id)
-    reviews = Review.objects.filter(guide=guide).select_related('tourist')
-    reviews_count = reviews.count()
+    reviews_qs = Review.objects.filter(guide=guide).select_related('tourist')
+    reviews_count = reviews_qs.count()
 
-    reviews_count = reviews.count()
+    # Verification status for trust badge
+    verification = getattr(guide, 'verification_request', None)
+    try:
+        verification = guide.verification_request
+    except GuideVerificationRequest.DoesNotExist:
+        verification = None
 
     can_review = False
     has_reviewed = False
     if request.user.is_authenticated:
-        # Avoid circular imports by importing inside function or from another module
-        # It's better to just do the checks directly here to avoid headache
         from bookings.models import BookingRequest
-        has_reviewed = reviews.filter(tourist=request.user).exists()
+        has_reviewed = reviews_qs.filter(tourist=request.user).exists()
         can_review = (
             request.user.role == 'tourist'
             and not has_reviewed
@@ -61,11 +68,97 @@ def guide_detail(request, guide_id):
             ).exists()
         )
 
+    report_form = GuideReportForm()
+
     context = {
         'guide': guide,
-        'reviews': reviews,
+        'reviews': reviews_qs,
         'reviews_count': reviews_count,
         'can_review': can_review,
         'has_reviewed': has_reviewed,
+        'verification': verification,
+        'report_form': report_form,
     }
     return render(request, 'guides/guide_detail.html', context)
+
+
+@login_required
+def verification_submit(request):
+    """Подача заявки на верификацию (только для гидов)."""
+    if request.user.role != 'guide':
+        messages.error(request, 'Только гиды могут подать заявку на верификацию.')
+        return redirect('home')
+
+    guide_profile = get_object_or_404(GuideProfile, user=request.user)
+
+    # Check if already has a request
+    try:
+        existing = guide_profile.verification_request
+        if existing.status != GuideVerificationRequest.Status.REJECTED:
+            return redirect('guides:verification_status')
+        # If rejected, allow resubmission — delete old request
+        existing.delete()
+    except GuideVerificationRequest.DoesNotExist:
+        pass
+
+    if request.method == 'POST':
+        form = VerificationRequestForm(request.POST, request.FILES)
+        if form.is_valid():
+            vr = form.save(commit=False)
+            vr.guide = guide_profile
+            vr.status = GuideVerificationRequest.Status.SUBMITTED
+            vr.save()
+            messages.success(request, 'Заявка на верификацию успешно отправлена!')
+            return redirect('guides:verification_status')
+    else:
+        # Pre-fill from existing GuideProfile
+        form = VerificationRequestForm(initial={
+            'display_name': guide_profile.name,
+            'city': guide_profile.city,
+            'languages': guide_profile.languages,
+            'bio': guide_profile.bio,
+            'service_types': guide_profile.services_text,
+        })
+
+    return render(request, 'guides/verification_form.html', {
+        'form': form,
+        'guide': guide_profile,
+    })
+
+
+@login_required
+def verification_status(request):
+    """Статус верификации для гида."""
+    if request.user.role != 'guide':
+        messages.error(request, 'Только гиды могут видеть статус верификации.')
+        return redirect('home')
+
+    guide_profile = get_object_or_404(GuideProfile, user=request.user)
+
+    try:
+        verification = guide_profile.verification_request
+    except GuideVerificationRequest.DoesNotExist:
+        verification = None
+
+    return render(request, 'guides/verification_status.html', {
+        'verification': verification,
+        'guide': guide_profile,
+    })
+
+
+@login_required
+def report_guide(request, guide_id):
+    """Отправка жалобы на гида."""
+    guide = get_object_or_404(GuideProfile, pk=guide_id)
+
+    if request.method == 'POST':
+        form = GuideReportForm(request.POST)
+        if form.is_valid():
+            report = form.save(commit=False)
+            report.guide = guide
+            report.reported_by = request.user
+            report.save()
+            messages.success(request, 'Жалоба отправлена. Спасибо за обратную связь!')
+            return redirect('guides:detail', guide_id=guide.pk)
+
+    return redirect('guides:detail', guide_id=guide.pk)
