@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'chats',
     'bookings',
     'reviews',
+    'experiences',
 ]
 
 # ---------- Middleware ----------
@@ -124,3 +125,6 @@ LOGOUT_REDIRECT_URL = '/'
 
 # ---------- Gemini API ----------
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+
+# ---------- DeepSeek API ----------
+DEEPSEEK_API_KEY = os.environ.get('DEEPSEEK_API_KEY', '')

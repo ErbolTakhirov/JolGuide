@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Экскурсии{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <div class="step-icon flex-shrink-0"><i class="bi bi-map"></i></div>
+      <div>
+        <h1 class="fw-bold mb-0 h3">Экскурсии</h1>
+        <p class="text-muted small mb-0">Приватные и групповые экскурсии от проверенных гидов</p>
+      </div>
+    </div>
+
+    {# ═══ Filters ═══ #}
+    <div class="card card-glass p-3 mb-4">
+      <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label small">Город</label>
+          <select name="city" class="form-select form-select-sm">
+            <option value="">Все города</option>
+            {% for c in all_cities %}
+              <option value="{{ c }}" {% if c == current_city %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small">Режим</label>
+          <select name="mode" class="form-select form-select-sm">
+            <option value="">Все</option>
+            {% for val, label in mode_choices %}
+              <option value="{{ val }}" {% if val == current_mode %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small">Категория</label>
+          <select name="category" class="form-select form-select-sm">
+            <option value="">Все</option>
+            {% for val, label in category_choices %}
+              <option value="{{ val }}" {% if val == current_category %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-accent btn-sm rounded-pill w-100">
+            <i class="bi bi-search me-1"></i>Найти
+          </button>
+        </div>
+      </form>
+    </div>
+
+    {# ═══ Experience Cards ═══ #}
+    <div class="row g-4">
+      {% for exp in experiences %}
+      <div class="col-md-6 col-lg-4">
+        <div class="card card-glass h-100 overflow-hidden">
+          <div class="card-body d-flex flex-column">
+            {# Mode Badge #}
+            <div class="mb-2">
+              {% if exp.mode == 'private' %}
+                <span class="badge bg-primary"><i class="bi bi-person me-1"></i>Приватная</span>
+              {% else %}
+                <span class="badge bg-success"><i class="bi bi-people me-1"></i>Групповая</span>
+              {% endif %}
+              <span class="badge bg-secondary">{{ exp.get_category_display }}</span>
+            </div>
+
+            <h5 class="fw-bold mb-1">{{ exp.title }}</h5>
+
+            <div class="text-muted small mb-2">
+              <i class="bi bi-person-badge me-1"></i>
+              <a href="{% url 'guides:detail' exp.guide.pk %}" class="text-accent">{{ exp.guide.name }}</a>
+              {% if exp.guide.is_verified %}
+                <i class="bi bi-patch-check-fill text-success ms-1" title="Верифицирован"></i>
+              {% endif %}
+            </div>
+
+            <p class="small text-muted mb-2">{{ exp.description|truncatechars:100 }}</p>
+
+            <div class="d-flex flex-wrap gap-2 small text-muted mb-3">
+              <span><i class="bi bi-geo-alt me-1"></i>{{ exp.city }}</span>
+              <span><i class="bi bi-clock me-1"></i>{{ exp.duration_hours }}ч</span>
+              <span><i class="bi bi-calendar me-1"></i>{{ exp.datetime|date:"d.m.Y H:i" }}</span>
+            </div>
+
+            <div class="mt-auto">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <span class="h5 fw-bold text-accent mb-0">${{ exp.price }}</span>
+                  {% if exp.mode == 'group' %}
+                    <span class="small text-muted ms-1">
+                      {{ exp.seats_left }}/{{ exp.max_participants }} мест
+                    </span>
+                  {% endif %}
+                </div>
+                <a href="{% url 'experiences:detail' exp.pk %}" class="btn btn-outline-accent btn-sm rounded-pill">
+                  Подробнее
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12">
+        <div class="card card-glass text-center p-5">
+          <i class="bi bi-map display-3 text-muted mb-3"></i>
+          <h5 class="fw-semibold">Экскурсий пока нет</h5>
+          <p class="text-muted mb-0">Скоро здесь появятся интересные предложения!</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

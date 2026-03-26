@@ -46,6 +46,11 @@
               <i class="bi bi-stars me-1"></i>AI Match
             </a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'experiences:list' %}">
+              <i class="bi bi-map me-1"></i>Экскурсии
+            </a>
+          </li>
         </ul>
 
         <ul class="navbar-nav ms-auto">
@@ -59,7 +64,7 @@
                 {% if user.role == 'tourist' %}
                   <li><a class="dropdown-item" href="{% url 'bookings:tourist_dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Мои заявки</a></li>
                 {% elif user.role == 'guide' %}
-                  <li><a class="dropdown-item" href="{% url 'bookings:guide_dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Кабинет гида</a></li>
+                  <li><a class="dropdown-item" href="{% url 'experiences:dashboard' %}"><i class="bi bi-speedometer2 me-2"></i>Кабинет гида</a></li>
                   <li><a class="dropdown-item" href="{% url 'guides:verification_status' %}"><i class="bi bi-shield-check me-2"></i>Верификация</a></li>
                 {% elif user.role == 'admin' or user.is_staff %}
                   <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="bi bi-shield-lock me-2"></i>Админ-панель</a></li>

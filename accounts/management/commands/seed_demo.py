@@ -10,6 +10,7 @@ from chats.models import ChatMessage
 from bookings.models import BookingRequest
 from matching.models import MatchRequest, MatchResult
 from guides.models import GuideVerificationRequest
+from experiences.models import Experience, ExperienceBooking, ExperienceReview
 
 User = get_user_model()
 
@@ -23,6 +24,9 @@ class Command(BaseCommand):
         # Удаляем старых демо-пользователей
         User.objects.filter(email__endswith='@demo.com').delete()
         # Также очистим отзывы, чаты и букинг, чтобы не плодить мусор
+        ExperienceReview.objects.all().delete()
+        ExperienceBooking.objects.all().delete()
+        Experience.objects.all().delete()
         Review.objects.all().delete()
         ChatMessage.objects.all().delete()
         BookingRequest.objects.all().delete()
@@ -225,5 +229,93 @@ class Command(BaseCommand):
         # t1 <-> elena (2 шт)
         ChatMessage.objects.create(sender=t1, receiver=elena.user, text='Здравствуйте, мы из Бишкека, планируем в Алматы.')
         ChatMessage.objects.create(sender=elena.user, receiver=t1, text='Буду рада вас видеть!')
+
+        # ══════════════════════════════════════════════
+        # Demo Experiences, Bookings & Reviews
+        # ══════════════════════════════════════════════
+        self.stdout.write('Creating experiences...')
+
+        exp1 = Experience.objects.create(
+            guide=azamat,
+            title='Обзорная экскурсия по Бишкеку',
+            description='Пешая прогулка по центру города: площадь Ала-Тоо, Дубовый парк, Ошский базар и скрытые дворики.',
+            city='Бишкек',
+            category='walking',
+            duration_hours=3,
+            price=25.00,
+            mode='private',
+            datetime=timezone.now() + timedelta(days=5),
+            meeting_point='Площадь Ала-Тоо, у флага',
+            max_participants=1,
+            is_active=True,
+        )
+        exp2 = Experience.objects.create(
+            guide=azamat,
+            title='Горный тур в Ала-Арчу',
+            description='Групповой поход по ущелью Ала-Арча: водопады, панорамные виды, шашлыки на поляне.',
+            city='Бишкек',
+            category='nature',
+            duration_hours=7,
+            price=40.00,
+            mode='group',
+            datetime=timezone.now() + timedelta(days=7),
+            meeting_point='Южные ворота парка Ала-Арча',
+            max_participants=10,
+            is_active=True,
+        )
+        exp3 = Experience.objects.create(
+            guide=elena,
+            title='Гастро-тур по Алматы',
+            description='Дегустация уйгурской, казахской и корейской кухни в лучших заведениях города.',
+            city='Алматы',
+            category='food',
+            duration_hours=4,
+            price=35.00,
+            mode='group',
+            datetime=timezone.now() + timedelta(days=3),
+            meeting_point='Зелёный Базар, центральный вход',
+            max_participants=8,
+            is_active=True,
+        )
+        exp4 = Experience.objects.create(
+            guide=elena,
+            title='Медеу и Чимбулак — зимняя сказка',
+            description='Приватный тур на горнолыжный курорт: каток, подъёмник, горячий шоколад.',
+            city='Алматы',
+            category='adventure',
+            duration_hours=5,
+            price=60.00,
+            mode='private',
+            datetime=timezone.now() + timedelta(days=10),
+            meeting_point='Остановка «Медеу»',
+            max_participants=1,
+            is_active=True,
+        )
+
+        # Bookings (some completed for reviews)
+        self.stdout.write('Creating experience bookings...')
+        b1 = ExperienceBooking.objects.create(
+            experience=exp2, tourist=t1, num_guests=2, status='completed',
+        )
+        b2 = ExperienceBooking.objects.create(
+            experience=exp3, tourist=t2, num_guests=1, status='completed',
+        )
+        b3 = ExperienceBooking.objects.create(
+            experience=exp2, tourist=t2, num_guests=3, status='confirmed',
+        )
+        b4 = ExperienceBooking.objects.create(
+            experience=exp1, tourist=t1, num_guests=1, status='pending',
+        )
+
+        # Reviews
+        self.stdout.write('Creating experience reviews...')
+        ExperienceReview.objects.create(
+            booking=b1, experience=exp2, guide=azamat, tourist=t1,
+            rating=5, text='Потрясающий поход! Азамат — лучший гид. Виды просто космос, шашлыки были великолепны.',
+        )
+        ExperienceReview.objects.create(
+            booking=b2, experience=exp3, guide=elena, tourist=t2,
+            rating=4, text='Очень вкусно, но хотелось бы больше остановок. Елена отлично рассказывает историю блюд!',
+        )
 
         self.stdout.write(self.style.SUCCESS('Successfully seeded the database with demo data!'))

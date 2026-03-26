@@ -70,6 +70,12 @@ def guide_detail(request, guide_id):
 
     report_form = GuideReportForm()
 
+    # Active experiences for this guide
+    from experiences.models import Experience
+    guide_experiences = Experience.objects.filter(
+        guide=guide, is_active=True
+    ).order_by('datetime')[:6]
+
     context = {
         'guide': guide,
         'reviews': reviews_qs,
@@ -78,6 +84,7 @@ def guide_detail(request, guide_id):
         'has_reviewed': has_reviewed,
         'verification': verification,
         'report_form': report_form,
+        'guide_experiences': guide_experiences,
     }
     return render(request, 'guides/guide_detail.html', context)
 

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if editing %}Редактировать{% else %}Новая{% endif %} экскурсия{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container" style="max-width: 700px;">
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <div class="step-icon flex-shrink-0">
+        <i class="bi bi-{% if editing %}pencil{% else %}plus-circle{% endif %}"></i>
+      </div>
+      <div>
+        <h1 class="fw-bold mb-0 h3">{% if editing %}Редактировать{% else %}Новая{% endif %} экскурсия</h1>
+        <p class="text-muted small mb-0">
+          {% if editing %}Обновите информацию{% else %}Создайте свою экскурсию{% endif %}
+        </p>
+      </div>
+    </div>
+
+    <div class="card card-glass p-4">
+      <form method="post">
+        {% csrf_token %}
+
+        {% for field in form %}
+        <div class="mb-3 {% if field.name == 'is_active' %}form-check form-switch{% endif %}">
+          {% if field.name != 'is_active' %}
+            <label for="{{ field.id_for_label }}" class="form-label small fw-semibold">
+              {{ field.label }}
+            </label>
+          {% endif %}
+          {{ field }}
+          {% if field.name == 'is_active' %}
+            <label for="{{ field.id_for_label }}" class="form-check-label small">
+              {{ field.label }}
+            </label>
+          {% endif %}
+          {% if field.help_text %}
+            <div class="form-text small">{{ field.help_text }}</div>
+          {% endif %}
+          {% for error in field.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+
+        <div class="d-flex gap-2 mt-4">
+          <button type="submit" class="btn btn-accent rounded-pill px-4">
+            <i class="bi bi-check-lg me-1"></i>
+            {% if editing %}Сохранить{% else %}Создать{% endif %}
+          </button>
+          <a href="{% url 'experiences:dashboard' %}" class="btn btn-outline-secondary rounded-pill px-4">
+            Отмена
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

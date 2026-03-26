@@ -111,6 +111,32 @@
         </div>
         {% endif %}
 
+        {# ═══ Guide Experiences ═══ #}
+        {% if guide_experiences %}
+        <div class="card card-glass p-4 mb-4">
+          <h5 class="fw-bold mb-3"><i class="bi bi-map me-2 text-accent"></i>Экскурсии</h5>
+          {% for exp in guide_experiences %}
+          <div class="d-flex justify-content-between align-items-center {% if not forloop.last %}border-bottom pb-2 mb-2{% endif %}">
+            <div>
+              {% if exp.mode == 'private' %}
+                <span class="badge bg-primary me-1"><i class="bi bi-person"></i></span>
+              {% else %}
+                <span class="badge bg-success me-1"><i class="bi bi-people"></i></span>
+              {% endif %}
+              <a href="{% url 'experiences:detail' exp.pk %}" class="fw-semibold small text-accent">
+                {{ exp.title }}
+              </a>
+              <div class="text-muted small">
+                {{ exp.datetime|date:"d.m.Y H:i" }} · {{ exp.duration_hours }}ч
+                {% if exp.mode == 'group' %} · {{ exp.seats_left }}/{{ exp.max_participants }} мест{% endif %}
+              </div>
+            </div>
+            <span class="fw-bold text-accent">${{ exp.price }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
         <!-- Reviews -->
         <div class="card card-glass p-4 mt-4">
           <h5 class="fw-bold mb-3">

@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+
+{% block title %}Кабинет гида — Экскурсии{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div class="d-flex align-items-center gap-3">
+        <div class="step-icon flex-shrink-0"><i class="bi bi-speedometer2"></i></div>
+        <div>
+          <h1 class="fw-bold mb-0 h3">Кабинет гида</h1>
+          <p class="text-muted small mb-0">{{ guide.name }} · {{ guide.city }}</p>
+        </div>
+      </div>
+      <a href="{% url 'experiences:create' %}" class="btn btn-accent rounded-pill">
+        <i class="bi bi-plus-lg me-1"></i>Новая экскурсия
+      </a>
+    </div>
+
+    {# ═══ Stats Row ═══ #}
+    <div class="row g-3 mb-4">
+      <div class="col-sm-3">
+        <div class="card card-glass text-center p-3">
+          <div class="h2 fw-bold text-accent mb-0">{{ experiences|length }}</div>
+          <div class="small text-muted">Экскурсий</div>
+        </div>
+      </div>
+      <div class="col-sm-3">
+        <div class="card card-glass text-center p-3">
+          <div class="h2 fw-bold text-warning mb-0">{{ bookings|length }}</div>
+          <div class="small text-muted">Бронирований</div>
+        </div>
+      </div>
+      <div class="col-sm-3">
+        <div class="card card-glass text-center p-3">
+          <div class="h2 fw-bold text-info mb-0">{{ reviews|length }}</div>
+          <div class="small text-muted">Отзывов</div>
+        </div>
+      </div>
+      <div class="col-sm-3">
+        <div class="card card-glass text-center p-3">
+          <div class="h2 fw-bold text-success mb-0">{{ guide.rating }}/5</div>
+          <div class="small text-muted">Рейтинг</div>
+        </div>
+      </div>
+    </div>
+
+    {# ═══ Tabs ═══ #}
+    <ul class="nav nav-pills mb-4" role="tablist">
+      <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-experiences">
+          <i class="bi bi-map me-1"></i>Экскурсии
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-bookings">
+          <i class="bi bi-calendar-check me-1"></i>Бронирования
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-reviews">
+          <i class="bi bi-chat-heart me-1"></i>Отзывы
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-ai">
+          <i class="bi bi-robot me-1"></i>AI Сводка
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+      {# ═══ TAB: Experiences ═══ #}
+      <div class="tab-pane fade show active" id="tab-experiences">
+        {% for exp in experiences %}
+        <div class="card card-glass p-3 mb-3">
+          <div class="row align-items-center g-3">
+            <div class="col-auto">
+              {% if exp.mode == 'private' %}
+                <span class="badge bg-primary fs-6"><i class="bi bi-person me-1"></i>Приватная</span>
+              {% else %}
+                <span class="badge bg-success fs-6"><i class="bi bi-people me-1"></i>Групповая</span>
+              {% endif %}
+            </div>
+            <div class="col">
+              <h5 class="fw-semibold mb-1">{{ exp.title }}</h5>
+              <div class="d-flex flex-wrap gap-3 text-muted small">
+                <span><i class="bi bi-geo-alt me-1"></i>{{ exp.city }}</span>
+                <span><i class="bi bi-calendar me-1"></i>{{ exp.datetime|date:"d.m.Y H:i" }}</span>
+                <span><i class="bi bi-currency-dollar me-1"></i>{{ exp.price }}</span>
+                {% if exp.mode == 'group' %}
+                  <span><i class="bi bi-people me-1"></i>{{ exp.seats_left }}/{{ exp.max_participants }} мест</span>
+                {% endif %}
+                {% if exp.is_active %}
+                  <span class="text-success"><i class="bi bi-check-circle me-1"></i>Активна</span>
+                {% else %}
+                  <span class="text-danger"><i class="bi bi-x-circle me-1"></i>Неактивна</span>
+                {% endif %}
+              </div>
+            </div>
+            <div class="col-auto">
+              <a href="{% url 'experiences:edit' exp.pk %}" class="btn btn-outline-accent btn-sm rounded-pill">
+                <i class="bi bi-pencil me-1"></i>Редактировать
+              </a>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="card card-glass text-center p-5">
+          <i class="bi bi-map display-3 text-muted mb-3"></i>
+          <h5 class="fw-semibold">Нет экскурсий</h5>
+          <p class="text-muted">Создайте первую экскурсию!</p>
+          <a href="{% url 'experiences:create' %}" class="btn btn-accent rounded-pill px-4">
+            <i class="bi bi-plus-lg me-1"></i>Создать
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+
+      {# ═══ TAB: Bookings ═══ #}
+      <div class="tab-pane fade" id="tab-bookings">
+        {% for b in bookings %}
+        <div class="card card-glass p-3 mb-3">
+          <div class="row align-items-center g-3">
+            <div class="col-auto">
+              {% if b.status == 'pending' %}
+                <span class="badge booking-badge-pending fs-6"><i class="bi bi-hourglass-split me-1"></i>Ожидает</span>
+              {% elif b.status == 'confirmed' %}
+                <span class="badge bg-primary fs-6"><i class="bi bi-check-circle me-1"></i>Подтверждено</span>
+              {% elif b.status == 'completed' %}
+                <span class="badge bg-success fs-6"><i class="bi bi-check-all me-1"></i>Завершено</span>
+              {% else %}
+                <span class="badge bg-danger fs-6"><i class="bi bi-x-circle me-1"></i>Отменено</span>
+              {% endif %}
+            </div>
+            <div class="col">
+              <h6 class="fw-semibold mb-1">{{ b.experience.title }}</h6>
+              <div class="d-flex flex-wrap gap-3 text-muted small">
+                <span><i class="bi bi-person me-1"></i>{{ b.tourist.username }}</span>
+                <span><i class="bi bi-people me-1"></i>{{ b.num_guests }} чел.</span>
+                <span><i class="bi bi-calendar me-1"></i>{{ b.created_at|date:"d.m.Y" }}</span>
+              </div>
+            </div>
+            <div class="col-auto">
+              {% if b.status == 'pending' %}
+              <div class="d-flex gap-1">
+                <a href="{% url 'experiences:booking_status' b.pk 'confirmed' %}"
+                   class="btn btn-success btn-sm rounded-pill"
+                   onclick="return confirm('Подтвердить?')">
+                  <i class="bi bi-check-lg"></i>
+                </a>
+                <a href="{% url 'experiences:booking_status' b.pk 'cancelled' %}"
+                   class="btn btn-outline-danger btn-sm rounded-pill"
+                   onclick="return confirm('Отменить?')">
+                  <i class="bi bi-x-lg"></i>
+                </a>
+              </div>
+              {% elif b.status == 'confirmed' %}
+              <a href="{% url 'experiences:booking_status' b.pk 'completed' %}"
+                 class="btn btn-outline-success btn-sm rounded-pill"
+                 onclick="return confirm('Отметить как завершено?')">
+                <i class="bi bi-check-all me-1"></i>Завершить
+              </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="card card-glass text-center p-5">
+          <i class="bi bi-inbox display-3 text-muted mb-3"></i>
+          <h5 class="fw-semibold">Нет бронирований</h5>
+          <p class="text-muted mb-0">Бронирования появятся здесь, когда туристы запишутся.</p>
+        </div>
+        {% endfor %}
+      </div>
+
+      {# ═══ TAB: Reviews ═══ #}
+      <div class="tab-pane fade" id="tab-reviews">
+        {% for r in reviews %}
+        <div class="card card-glass p-3 mb-3">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <strong class="small">{{ r.tourist.username }}</strong>
+              <span class="text-muted small ms-2">→ {{ r.experience.title }}</span>
+              <div class="text-warning small mt-1">
+                {% for _ in "12345" %}
+                  {% if forloop.counter <= r.rating %}
+                    <i class="bi bi-star-fill"></i>
+                  {% else %}
+                    <i class="bi bi-star"></i>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+            <small class="text-muted">{{ r.created_at|date:"d.m.Y" }}</small>
+          </div>
+          {% if r.text %}
+            <p class="small text-muted mt-2 mb-0">{{ r.text }}</p>
+          {% endif %}
+        </div>
+        {% empty %}
+        <div class="card card-glass text-center p-5">
+          <i class="bi bi-chat-heart display-3 text-muted mb-3"></i>
+          <h5 class="fw-semibold">Нет отзывов</h5>
+          <p class="text-muted mb-0">Отзывы появятся после завершения экскурсий.</p>
+        </div>
+        {% endfor %}
+      </div>
+
+      {# ═══ TAB: AI Feedback ═══ #}
+      <div class="tab-pane fade" id="tab-ai">
+        <div class="card card-glass p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">
+              <i class="bi bi-robot text-accent me-2"></i>AI Сводка по отзывам
+            </h5>
+            <a href="{% url 'experiences:generate_feedback' %}" class="btn btn-outline-accent btn-sm rounded-pill">
+              <i class="bi bi-arrow-clockwise me-1"></i>Обновить сводку
+            </a>
+          </div>
+
+          {% if feedback %}
+          <div class="bg-body-tertiary rounded p-3">
+            <div class="small" style="white-space: pre-line;">{{ feedback.summary_text }}</div>
+            <hr>
+            <div class="text-muted small">
+              <i class="bi bi-info-circle me-1"></i>
+              На основе {{ feedback.source_review_count }} отзывов.
+              Обновлено: {{ feedback.generated_at|date:"d.m.Y H:i" }}
+            </div>
+          </div>
+          {% else %}
+          <div class="text-center py-4">
+            <i class="bi bi-robot display-4 text-muted mb-3"></i>
+            <p class="text-muted">Нажмите «Обновить сводку» для генерации AI-анализа ваших отзывов.</p>
+          </div>
+          {% endif %}
+
+          <div class="alert alert-info small mt-3 mb-0">
+            <i class="bi bi-eye-slash me-1"></i>
+            Эта сводка видна <strong>только вам</strong> и помогает улучшить качество услуг.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

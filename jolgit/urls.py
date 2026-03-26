@@ -14,6 +14,7 @@ urlpatterns = [
     path('bookings/', include('bookings.urls')),
     path('match/', include('matching.urls')),
     path('reviews/', include('reviews.urls')),
+    path('experiences/', include('experiences.urls')),
     
     # API endpoints
     path('api/guides/', include('guides.api_urls')),

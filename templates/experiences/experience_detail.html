@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ exp.title }}{% endblock %}
+
+{% block content %}
+<section class="py-5">
+  <div class="container">
+    <nav aria-label="breadcrumb" class="mb-4">
+      <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}" class="text-accent">Главная</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'experiences:list' %}" class="text-accent">Экскурсии</a></li>
+        <li class="breadcrumb-item active">{{ exp.title }}</li>
+      </ol>
+    </nav>
+
+    <div class="row g-4">
+      {# ═══ LEFT: Main Info ═══ #}
+      <div class="col-lg-8">
+        <div class="card card-glass p-4 mb-4">
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            {% if exp.mode == 'private' %}
+              <span class="badge bg-primary fs-6"><i class="bi bi-person me-1"></i>Приватная</span>
+            {% else %}
+              <span class="badge bg-success fs-6"><i class="bi bi-people me-1"></i>Групповая</span>
+            {% endif %}
+            <span class="badge bg-secondary fs-6">{{ exp.get_category_display }}</span>
+            {% if exp.guide.is_verified %}
+              <span class="badge bg-success-subtle text-success fs-6">
+                <i class="bi bi-patch-check-fill me-1"></i>Проверенный гид
+              </span>
+            {% endif %}
+          </div>
+
+          <h2 class="fw-bold mb-3">{{ exp.title }}</h2>
+          <p>{{ exp.description|linebreaksbr }}</p>
+
+          <div class="row g-3 mt-2">
+            <div class="col-sm-6">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-geo-alt text-accent fs-5"></i>
+                <div>
+                  <div class="small text-muted">Город</div>
+                  <strong>{{ exp.city }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-clock text-accent fs-5"></i>
+                <div>
+                  <div class="small text-muted">Длительность</div>
+                  <strong>{{ exp.duration_hours }} часов</strong>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-calendar text-accent fs-5"></i>
+                <div>
+                  <div class="small text-muted">Дата и время</div>
+                  <strong>{{ exp.datetime|date:"d.m.Y H:i" }}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-pin-map text-accent fs-5"></i>
+                <div>
+                  <div class="small text-muted">Место встречи</div>
+                  <strong>{{ exp.meeting_point|default:"Уточняется" }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {# ═══ Reviews ═══ #}
+        <div class="card card-glass p-4">
+          <h5 class="fw-bold mb-3">
+            <i class="bi bi-chat-square-heart me-2 text-accent"></i>
+            Отзывы
+            <span class="badge bg-accent-subtle text-accent-emphasis ms-2">{{ exp.review_count }}</span>
+          </h5>
+
+          {% if can_review %}
+          <div class="bg-body-tertiary rounded p-3 mb-4">
+            <h6 class="fw-bold mb-2">Оставить отзыв</h6>
+            <form action="{% url 'experiences:add_review' exp.pk %}" method="post">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label class="form-label small">Оценка</label>
+                {{ review_form.rating }}
+              </div>
+              <div class="mb-3">
+                <label class="form-label small">Комментарий</label>
+                {{ review_form.text }}
+              </div>
+              <button type="submit" class="btn btn-accent btn-sm rounded-pill px-4">Отправить</button>
+            </form>
+          </div>
+          {% endif %}
+
+          {% for review in reviews %}
+          <div class="{% if not forloop.last %}border-bottom pb-3 mb-3{% endif %}">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div>
+                <strong class="small">{{ review.tourist.username }}</strong>
+                <div class="text-warning small">
+                  {% for _ in "12345" %}
+                    {% if forloop.counter <= review.rating %}
+                      <i class="bi bi-star-fill"></i>
+                    {% else %}
+                      <i class="bi bi-star"></i>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
+              <small class="text-muted">{{ review.created_at|date:"d.m.Y" }}</small>
+            </div>
+            {% if review.text %}
+              <p class="small mb-0 text-muted">{{ review.text }}</p>
+            {% endif %}
+          </div>
+          {% empty %}
+          <p class="text-muted small mb-0">Отзывов пока нет.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      {# ═══ RIGHT: Booking Sidebar ═══ #}
+      <div class="col-lg-4">
+        <div class="card card-glass p-4 sticky-top" style="top: 100px;">
+          <div class="text-center mb-3">
+            <div class="h3 fw-bold text-accent">${{ exp.price }}</div>
+            <div class="small text-muted">за человека</div>
+          </div>
+
+          {% if exp.mode == 'group' %}
+          <div class="d-flex justify-content-between small mb-3 px-2">
+            <span class="text-muted">Мест занято:</span>
+            <strong>{{ exp.confirmed_count }} / {{ exp.max_participants }}</strong>
+          </div>
+          <div class="progress mb-3" style="height: 8px;">
+            {% widthratio exp.confirmed_count exp.max_participants 100 as pct %}
+            <div class="progress-bar bg-accent" style="width: {{ pct }}%"></div>
+          </div>
+          {% endif %}
+
+          {# Guide info #}
+          <div class="d-flex align-items-center gap-2 mb-3 p-2 bg-body-tertiary rounded">
+            <i class="bi bi-person-circle fs-4 text-accent"></i>
+            <div>
+              <a href="{% url 'guides:detail' exp.guide.pk %}" class="fw-semibold small text-accent">
+                {{ exp.guide.name }}
+              </a>
+              <div class="text-warning" style="font-size: 0.7rem;">
+                {% for _ in "12345" %}
+                  {% if forloop.counter <= exp.guide.rating %}
+                    <i class="bi bi-star-fill"></i>
+                  {% else %}
+                    <i class="bi bi-star"></i>
+                  {% endif %}
+                {% endfor %}
+                <span class="text-muted ms-1">{{ exp.guide.rating }}</span>
+              </div>
+            </div>
+          </div>
+
+          {# Booking action #}
+          {% if user.is_authenticated %}
+            {% if user_booking %}
+              <div class="alert alert-info small py-2 mb-0">
+                <i class="bi bi-check-circle me-1"></i>
+                Статус: <strong>{{ user_booking.get_status_display }}</strong>
+              </div>
+            {% elif exp.is_fully_booked %}
+              <button class="btn btn-secondary w-100 rounded-pill" disabled>
+                <i class="bi bi-x-circle me-1"></i>Мест нет
+              </button>
+            {% else %}
+              <form method="post" action="{% url 'experiences:book' exp.pk %}">
+                {% csrf_token %}
+                {% if exp.mode == 'group' %}
+                <div class="mb-3">
+                  <label class="form-label small">Кол-во гостей</label>
+                  <input type="number" name="num_guests" value="1" min="1"
+                         max="{{ exp.seats_left }}" class="form-control form-control-sm">
+                </div>
+                {% endif %}
+                <button type="submit" class="btn btn-accent w-100 rounded-pill"
+                        onclick="return confirm('Подтвердить бронирование?')">
+                  <i class="bi bi-calendar-check me-1"></i>
+                  {% if exp.mode == 'private' %}Забронировать{% else %}Присоединиться{% endif %}
+                </button>
+              </form>
+            {% endif %}
+          {% else %}
+            <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn btn-accent w-100 rounded-pill">
+              <i class="bi bi-box-arrow-in-right me-1"></i>Войдите для бронирования
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
