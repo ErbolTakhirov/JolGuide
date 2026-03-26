@@ -19,10 +19,19 @@
           <form method="post" novalidate>
             {% csrf_token %}
 
+            {% if guide.services_text %}
             <div class="mb-3">
-              <label for="service_name" class="form-label fw-medium">Услуга *</label>
+              <label class="form-label fw-medium"><i class="bi bi-briefcase me-2 text-accent"></i>Предлагаемые услуги</label>
+              <div class="p-3 bg-light border rounded small text-muted">
+                {{ guide.services_text|linebreaksbr }}
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="mb-3">
+              <label for="service_name" class="form-label fw-medium">Выберите услугу *</label>
               <input type="text" name="service_name" id="service_name"
-                     class="form-control" placeholder="Экскурсия по городу" required>
+                     class="form-control" placeholder="Впишите название услуги из списка выше" required>
             </div>
 
             <div class="mb-3">
