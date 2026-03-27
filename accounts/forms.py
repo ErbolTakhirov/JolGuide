@@ -45,7 +45,15 @@ class RegisterForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ('email', 'username', 'role', 'password1', 'password2')
+        fields = ('email', 'username', 'role')
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data['email']
+        user.role = self.cleaned_data['role']
+        if commit:
+            user.save()
+        return user
 
 
 class LoginForm(AuthenticationForm):

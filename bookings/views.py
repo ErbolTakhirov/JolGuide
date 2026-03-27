@@ -15,6 +15,7 @@ def role_required(role):
     return decorator
 
 from accounts.models import GuideProfile
+from chats.models import ChatMessage
 from .models import BookingRequest
 
 
@@ -89,6 +90,14 @@ def booking_update_status(request, booking_id, new_status):
 
     booking.status = new_status
     booking.save(update_fields=['status'])
+
+    # При принятии заявки — автоматическое сообщение от гида
+    if new_status == BookingRequest.Status.ACCEPTED:
+        ChatMessage.objects.create(
+            sender=booking.guide.user,
+            receiver=booking.tourist,
+            text=f"Здравствуйте! Ваша заявка на «{booking.service_name}» ({booking.date}) принята. Давайте обсудим детали!"
+        )
 
     label = 'принята' if new_status == BookingRequest.Status.ACCEPTED else 'отклонена'
     messages.success(request, f'Заявка {label}.')

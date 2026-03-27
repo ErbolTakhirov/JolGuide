@@ -1,211 +1,635 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load static %}
 
-{% block title %}AI Match — Подбор гида{% endblock %}
+{% block title %}JolGit Match AI — Поговори с AI и найди гида{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Theme variables ── */
+  :root {
+    --m-bg: #ffffff;
+    --m-sidebar: #f8fafc;
+    --m-border: #e2e8f0;
+    --m-text: #0f172a;
+    --m-text-muted: #64748b;
+    --m-bubble-bg: #ffffff;
+    --m-bubble-border: #e2e8f0;
+    --m-chat-bg: #f1f5f9;
+    --m-input-bg: #ffffff;
+    --m-card: #ffffff;
+    --m-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    --m-btn-hover: #eff6ff;
+  }
+
+  [data-bs-theme="dark"] {
+    --m-bg: #0f1117;
+    --m-sidebar: #151821;
+    --m-border: rgba(255,255,255,0.08);
+    --m-text: #f8fafc;
+    --m-text-muted: #94a3b8;
+    --m-bubble-bg: rgba(255,255,255,0.03);
+    --m-bubble-border: rgba(255,255,255,0.08);
+    --m-chat-bg: #0f1117;
+    --m-input-bg: rgba(0,0,0,0.2);
+    --m-card: rgba(255,255,255,0.04);
+    --m-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    --m-btn-hover: rgba(108, 92, 231, 0.15);
+  }
+
+  /* ── Layout ── */
+  body {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .site-footer {
+    display: none !important;
+  }
+  
+  .match-layout {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 0;
+    height: 100%;
+    overflow: hidden;
+    background: var(--m-bg);
+    color: var(--m-text);
+  }
+
+  /* ── Chat Panel ── */
+  .chat-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--m-bg);
+    border-right: 1px solid var(--m-border);
+  }
+
+  .chat-header {
+    padding: 1.25rem 1.75rem;
+    background: var(--m-bg);
+    border-bottom: 1px solid var(--m-border);
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    z-index: 10;
+  }
+
+  .chat-header h1 {
+    font-size: 1.2rem;
+    font-weight: 800;
+    margin: 0;
+    background: var(--gradient-warm);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.01em;
+  }
+
+  .chat-header p {
+    font-size: 0.85rem;
+    color: var(--m-text-muted);
+    margin: 4px 0 0;
+    font-weight: 500;
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem 1.75rem;
+    scroll-behavior: smooth;
+    background: var(--m-chat-bg);
+  }
+
+  .chat-messages::-webkit-scrollbar { width: 5px; }
+  .chat-messages::-webkit-scrollbar-track { background: transparent; }
+  .chat-messages::-webkit-scrollbar-thumb { background: rgba(108, 92, 231, 0.3); border-radius: 4px; }
+
+  /* Messages */
+  .msg { display: flex; gap: 12px; margin-bottom: 1.25rem; animation: fadeUp 0.3s ease; }
+  .msg.user { flex-direction: row-reverse; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; flex-shrink: 0; color: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  .msg.user .msg-avatar { background: var(--gradient-primary); }
+  .msg.assistant .msg-avatar { background: var(--gradient-warm); }
+
+  .msg-bubble {
+    max-width: 75%;
+    padding: 0.75rem 1.15rem;
+    border-radius: 18px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .msg.user .msg-bubble {
+    background: var(--gradient-primary);
+    color: #ffffff;
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2);
+  }
+  .msg.assistant .msg-bubble {
+    background: var(--m-bubble-bg);
+    color: var(--m-text);
+    border-bottom-left-radius: 4px;
+    border: 1px solid var(--m-bubble-border);
+  }
+
+  /* Typing indicator */
+  .typing-indicator { display: none; }
+  .typing-indicator.active { display: flex; }
+  .typing-dots span {
+    display: inline-block; width: 6px; height: 6px;
+    background: var(--m-text-muted); border-radius: 50%;
+    margin: 0 2px;
+    animation: bounce 1.2s infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%,80%,100% { transform: translateY(0); }
+    40%          { transform: translateY(-6px); }
+  }
+
+  /* Chat input */
+  .chat-input-area {
+    padding: 0.5rem 1rem 0 !important; /* Zero padding at the bottom */
+    border-top: 1px solid var(--m-border);
+    flex-shrink: 0;
+    width: 100%;
+    background: var(--m-bg);
+  }
+
+  .chat-input-row {
+    display: flex; gap: 8px; align-items: flex-end;
+  }
+
+  #msgInput {
+    flex: 1;
+    background: var(--m-input-bg);
+    border: 1px solid var(--m-border);
+    color: var(--m-text);
+    border-radius: 10px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.95rem;
+    resize: none;
+    max-height: 80px;
+    outline: none;
+    transition: all 0.2s;
+    margin-bottom: 0 !important;
+  }
+  #msgInput:focus { 
+    border-color: var(--accent); 
+    box-shadow: 0 0 0 3px var(--accent-glow); 
+  }
+  #msgInput::placeholder { color: var(--m-text-muted); }
+
+  #sendBtn {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: var(--gradient-primary);
+    border: none; color: #fff; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px var(--accent-glow);
+  }
+  #sendBtn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 6px 14px var(--accent-glow); }
+  #sendBtn:active:not(:disabled) { transform: translateY(1px); }
+  #sendBtn:disabled { filter: grayscale(1); opacity: 0.5; box-shadow: none; cursor: not-allowed; }
+
+  /* Quick buttons */
+  .quick-btns {
+    display: flex; gap: 4px; flex-wrap: wrap; margin-top: 0.4rem; margin-bottom: 0 !important;
+  }
+  .quick-btn {
+    font-size: 0.7rem; padding: 2px 8px; font-weight: 500;
+    background: var(--m-bubble-bg);
+    border: 1px solid var(--m-border);
+    border-radius: 20px; color: var(--m-text-muted);
+    cursor: pointer; transition: all 0.2s;
+    white-space: nowrap;
+    margin-bottom: 0 !important;
+  }
+
+
+
+
+  .quick-btn:hover { 
+    background: var(--m-btn-hover); 
+    border-color: var(--accent); 
+    color: var(--accent); 
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    display: flex; flex-direction: column;
+    height: 100%; overflow-y: auto; padding: 1.5rem;
+    gap: 1.25rem;
+    background: var(--m-sidebar);
+  }
+  .sidebar::-webkit-scrollbar { width: 5px; }
+  .sidebar::-webkit-scrollbar-thumb { background: rgba(108, 92, 231, 0.3); border-radius: 4px; }
+
+  /* Sidebar cards */
+  .sb-card {
+    background: var(--m-card);
+    border: 1px solid var(--m-border);
+    border-radius: 16px;
+    padding: 1.25rem;
+    box-shadow: var(--m-shadow);
+  }
+  .sb-title {
+    font-size: 0.8rem; font-weight: 800; letter-spacing: 0.05em;
+    text-transform: uppercase; color: var(--m-text-muted);
+    margin-bottom: 0.85rem;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  /* Guide cards */
+  .guide-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 0.75rem 0;
+    border-bottom: 1px dashed var(--m-border);
+    cursor: pointer; transition: all 0.2s; border-radius: 10px;
+  }
+  .guide-card:last-child { border-bottom: none; padding-bottom: 0; }
+  .guide-card:hover { background: var(--m-btn-hover); padding-left: 6px; padding-right: 6px; margin: 0 -6px; }
+  .guide-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--gradient-primary);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 1.1rem; flex-shrink: 0; color: #fff;
+  }
+  .guide-info { flex: 1; min-width: 0; }
+  .guide-name { font-size: 0.95rem; font-weight: 700; color: var(--m-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .guide-city { font-size: 0.8rem; color: var(--m-text-muted); margin-top: 1px; }
+  .guide-score { 
+    font-size: 0.8rem; font-weight: 800; color: var(--accent); 
+    background: var(--m-btn-hover); padding: 2px 8px; border-radius: 12px;
+  }
+
+  /* Itinerary */
+  .day-block { margin-bottom: 1rem; }
+  .day-block:last-child { margin-bottom: 0; }
+  .day-title { font-size: 0.9rem; font-weight: 800; color: var(--accent); margin-bottom: 0.5rem; }
+  .day-item { font-size: 0.85rem; color: var(--m-text); padding: 4px 0; display: flex; gap: 10px; line-height: 1.4; opacity: 0.85; }
+  .day-time { width: 45px; flex-shrink: 0; color: var(--m-text-muted); font-weight: 600; }
+
+  /* Budget */
+  .budget-row { display: flex; justify-content: space-between; font-size: 0.9rem; padding: 4px 0; }
+  .budget-row .label { color: var(--m-text-muted); }
+  .budget-row .val { color: var(--m-text); font-weight: 600; }
+  .budget-total { border-top: 1px solid var(--m-border); margin-top: 8px; padding-top: 8px; font-size: 0.95rem; }
+  .budget-total .label { font-weight: 700; color: var(--m-text); }
+  .budget-total .val { color: var(--accent); font-weight: 800; }
+
+  /* Weather */
+  .weather-row { display: flex; align-items: center; gap: 14px; }
+  .weather-temp { font-size: 2.5rem; font-weight: 900; color: var(--m-text); letter-spacing: -1px; }
+  .weather-desc { font-size: 0.9rem; font-weight: 600; color: var(--m-text-muted); }
+  .weather-advice-text { font-size: 0.85rem; color: var(--m-text); opacity: 0.85; margin-top: 8px; line-height: 1.4; background: var(--m-btn-hover); padding: 8px 12px; border-radius: 8px; border-left: 3px solid var(--accent); }
+
+  /* Empty state */
+  .empty-sidebar {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; height: 100%; text-align: center;
+    color: var(--m-text-muted); gap: 12px;
+    padding: 2rem;
+  }
+  .empty-sidebar svg { color: var(--m-border); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .match-layout { grid-template-columns: 1fr; height: auto; }
+    .chat-panel { height: 60vh; border-right: none; border-bottom: 1px solid var(--m-border); }
+    .sidebar { max-height: 50vh; }
+  }
+</style>
+{% endblock %}
 
 {% block content %}
+<div class="match-layout">
 
-{# ══ HERO ══ #}
-<section class="match-hero py-5">
-  <div class="container">
-    <div class="row justify-content-center text-center mb-5">
-      <div class="col-lg-7">
-        <span class="badge bg-accent-subtle text-accent-emphasis px-3 py-2 mb-3 rounded-pill">
-          <i class="bi bi-stars me-1"></i>Powered by Gemini AI
-        </span>
-        <h1 class="fw-800 display-5 mb-3">
-          Найди <span class="text-gradient">идеального гида</span>
-        </h1>
-        <p class="lead text-muted">
-          Опиши своё путешествие — AI подберёт лучших проводников с объяснением.
-        </p>
+  <!-- ══ CHAT PANEL ══ -->
+  <div class="chat-panel">
+
+    <div class="chat-messages" id="chatMessages">
+      <!-- Welcome -->
+      {% if not chat_messages %}
+      <div class="msg assistant">
+        <div class="msg-avatar">✦</div>
+        <div class="msg-bubble">
+          Привет! Я AI travel-консьерж сервиса JolGit. 🌍<br><br>
+          Расскажи о своей поездке — куда планируешь, на сколько дней, что нравится делать?
+          Я подберу гида и составлю маршрут прямо здесь.
+        </div>
+      </div>
+      {% else %}
+        {% for msg in chat_messages %}
+        <div class="msg {{ msg.role }}">
+          <div class="msg-avatar">{% if msg.role == 'user' %}👤{% else %}✦{% endif %}</div>
+          <div class="msg-bubble">{{ msg.content }}</div>
+        </div>
+        {% endfor %}
+      {% endif %}
+
+      <!-- Typing indicator -->
+      <div class="msg assistant typing-indicator" id="typingIndicator">
+        <div class="msg-avatar">✦</div>
+        <div class="msg-bubble">
+          <span class="typing-dots">
+            <span></span><span></span><span></span>
+          </span>
+        </div>
       </div>
     </div>
 
-    {# ══ FORM ══ #}
-    <div class="row justify-content-center">
-      <div class="col-lg-8">
-        <div class="card card-glass p-4 mb-4">
-          <form method="post" id="matchForm">
-            {% csrf_token %}
-            <label for="prompt" class="form-label fw-semibold mb-2">
-              <i class="bi bi-pencil-square me-1 text-accent"></i>Расскажите о своём запросе
-            </label>
-            <textarea
-              id="prompt"
-              name="prompt"
-              class="form-control match-textarea mb-3"
-              rows="4"
-              placeholder="Например: хочу пешую прогулку по Бишкеку с русскоязычным гидом, бюджет до $30 в день, интересует история и архитектура…"
-              required>{{ prompt }}</textarea>
-
-            {% if error %}
-            <div class="alert alert-danger small py-2">
-              <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
-            </div>
-            {% endif %}
-
-            <div class="d-flex gap-2">
-              <button type="submit" class="btn btn-accent rounded-pill px-4" id="submitBtn">
-                <i class="bi bi-stars me-1"></i>Подобрать гидов
-              </button>
-              {% if prompt %}
-              <button type="button" class="btn btn-outline-secondary rounded-pill"
-                      onclick="document.getElementById('prompt').value=''; this.form.submit()">
-                <i class="bi bi-arrow-counterclockwise me-1"></i>Сбросить
-              </button>
-              {% endif %}
-            </div>
-          </form>
-        </div>
-
-        {# ══ TIPS (только когда нет результатов) ══ #}
-        {% if not results and not prompt %}
-        <div class="row g-3 text-center">
-          <div class="col-md-4">
-            <div class="card card-glass p-3 h-100">
-              <i class="bi bi-geo-alt text-accent fs-3 mb-2"></i>
-              <p class="small mb-0">Укажи <strong>город</strong> или регион куда едешь</p>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="card card-glass p-3 h-100">
-              <i class="bi bi-cash-coin text-accent fs-3 mb-2"></i>
-              <p class="small mb-0">Напиши <strong>бюджет</strong> и предпочтения по цене</p>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="card card-glass p-3 h-100">
-              <i class="bi bi-translate text-accent fs-3 mb-2"></i>
-              <p class="small mb-0">Укажи <strong>язык</strong> общения с гидом</p>
-            </div>
-          </div>
-        </div>
-        {% endif %}
+    <!-- Input Area -->
+    <div class="chat-input-area">
+      <div class="chat-input-row">
+        <textarea
+          id="msgInput"
+          placeholder="Расскажи о поездке..."
+          rows="1"
+        ></textarea>
+        <button id="sendBtn" title="Отправить">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="quick-btns" id="quickBtns">
+        <button class="quick-btn" data-msg="Сделай план дешевле">💸 Дешевле</button>
+        <button class="quick-btn" data-msg="Добавь больше природы и активного отдыха">🌿 Больше природы</button>
+        <button class="quick-btn" data-msg="Добавь больше исторических и культурных мест">🏛 Больше истории</button>
+        <button class="quick-btn" data-msg="Сделай маршрут подходящим для семьи с детьми">👨‍👩‍👧 Семейный формат</button>
+        <button class="quick-btn" data-msg="Покажи другого гида из списка">🔄 Другого гида</button>
       </div>
     </div>
   </div>
-</section>
 
-{# ══ RESULTS ══ #}
-{% if results %}
-<section class="py-5 bg-body-secondary">
-  <div class="container">
-    <div class="text-center mb-4">
-      <h2 class="fw-bold">
-        <i class="bi bi-trophy me-2 text-accent"></i>Топ-{{ results|length }} гидов для вас
-      </h2>
-      <p class="text-muted">Результаты подобраны по вашему запросу</p>
+  <!-- ══ SIDEBAR ══ -->
+  <div class="sidebar" id="sidebar">
+
+    <!-- Empty state (hidden when results appear) -->
+    <div class="empty-sidebar" id="emptyState">
+      <svg width="60" height="60" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+      </svg>
+      <p style="font-size:0.85rem; margin:0">Здесь появятся гиды и маршрут<br>после вашего запроса</p>
     </div>
 
-    <div class="row g-4 justify-content-center">
-      {% for item in results %}
-      <div class="col-md-6 col-lg-4">
-        <div class="card card-glass h-100 overflow-hidden match-result-card">
-
-          {# Место / medalка #}
-          <div class="match-rank rank-{{ forloop.counter }}">
-            {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% else %}🥉{% endif %}
-          </div>
-
-          {# Фото гида #}
-          <div class="guide-card-photo d-flex align-items-center justify-content-center">
-            {% if item.guide.photo %}
-              <img src="{{ item.guide.photo.url }}" alt="{{ item.guide.name }}"
-                   class="w-100 h-100" style="object-fit:cover">
-            {% else %}
-              <i class="bi bi-person-bounding-box display-1 text-muted"></i>
-            {% endif %}
-          </div>
-
-          <div class="card-body">
-            {# Имя + бейджи #}
-            <div class="d-flex align-items-center mb-1">
-              <h5 class="card-title fw-bold mb-0">{{ item.guide.name }}</h5>
-              {% if item.guide.is_verified %}
-                <span class="badge bg-success ms-2">
-                  <i class="bi bi-patch-check-fill"></i>
-                </span>
-              {% endif %}
-            </div>
-
-            <p class="text-muted small mb-2">
-              <i class="bi bi-geo-alt me-1"></i>{{ item.guide.city }}
-              <span class="mx-1">·</span>
-              <i class="bi bi-translate me-1"></i>{{ item.guide.languages }}
-            </p>
-
-            {# AI-Score прогресс-бар #}
-            <div class="mb-3">
-              <div class="d-flex justify-content-between small mb-1">
-                <span class="fw-semibold text-accent">AI-совпадение</span>
-                <span class="fw-bold">{{ item.score|floatformat:0 }}%</span>
-              </div>
-              <div class="progress" style="height:6px; border-radius:10px;">
-                <div class="progress-bar bg-gradient-accent"
-                     style="width:{% widthratio item.score 1 100 %}%;"></div>
-              </div>
-            </div>
-
-            {# Reason #}
-            <div class="match-reason mb-2">
-              <i class="bi bi-check-circle-fill text-success me-1"></i>
-              <span class="small">{{ item.reason }}</span>
-            </div>
-
-            {# Compromise #}
-            {% if item.compromise %}
-            <div class="match-compromise mb-3">
-              <i class="bi bi-info-circle-fill text-warning me-1"></i>
-              <span class="small text-muted">{{ item.compromise }}</span>
-            </div>
-            {% endif %}
-
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="fw-bold text-accent">от ${{ item.guide.price_from }}</span>
-              <div class="text-warning small">
-                {% for _ in "12345" %}
-                  {% if forloop.counter <= item.guide.rating %}
-                    <i class="bi bi-star-fill"></i>
-                  {% else %}
-                    <i class="bi bi-star"></i>
-                  {% endif %}
-                {% endfor %}
-              </div>
-            </div>
-          </div>
-
-          <div class="card-footer bg-transparent border-0 pb-3 px-3">
-            <a href="{% url 'guides:detail' item.guide.pk %}"
-               class="btn btn-outline-accent btn-sm w-100 rounded-pill">
-              <i class="bi bi-eye me-1"></i>Профиль гида
-            </a>
-          </div>
-        </div>
-      </div>
-      {% endfor %}
+    <!-- Guides (hidden initially) -->
+    <div class="sb-card" id="guidesCard" style="display:none">
+      <div class="sb-title">🏆 Лучшие гиды</div>
+      <div id="guidesList"></div>
     </div>
 
-    {# CTA под результатами #}
-    <div class="text-center mt-5">
-      <p class="text-muted mb-3">Не то, что искали?</p>
-      <a href="{% url 'guides:list' %}" class="btn btn-outline-secondary rounded-pill px-4">
-        <i class="bi bi-grid me-1"></i>Смотреть всех гидов
-      </a>
+    <!-- Weather -->
+    <div class="sb-card" id="weatherCard" style="display:none">
+      <div class="sb-title">🌤 Погода сейчас</div>
+      <div id="weatherContent"></div>
     </div>
+
+    <!-- Itinerary -->
+    <div class="sb-card" id="itineraryCard" style="display:none">
+      <div class="sb-title">🗓 Маршрут по дням</div>
+      <div id="itineraryContent"></div>
+    </div>
+
+    <!-- Budget -->
+    <div class="sb-card" id="budgetCard" style="display:none">
+      <div class="sb-title">💰 Примерный бюджет</div>
+      <div id="budgetContent"></div>
+    </div>
+
+    <!-- Tips -->
+    <div class="sb-card" id="tipsCard" style="display:none">
+      <div class="sb-title">🔑 Local Tips</div>
+      <ul id="tipsList" style="margin:0; padding-left:1rem; font-size:0.82rem; color: rgba(255,255,255,0.65); line-height:1.8;"></ul>
+    </div>
+
   </div>
-</section>
-{% endif %}
-
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  // Показываем спиннер при отправке формы
-  document.getElementById('matchForm').addEventListener('submit', function() {
-    const btn = document.getElementById('submitBtn');
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Анализирую…';
-    btn.disabled = true;
+const SESSION_ID = {{ session.id }};
+const SEND_URL   = "{% url 'matching:send_message' %}";
+const REVISE_URL = "{% url 'matching:revise' %}";
+const CSRF_TOKEN = "{{ csrf_token }}";
+
+const chatEl    = document.getElementById('chatMessages');
+const inputEl   = document.getElementById('msgInput');
+const sendBtn   = document.getElementById('sendBtn');
+const typingEl  = document.getElementById('typingIndicator');
+const emptyState = document.getElementById('emptyState');
+
+// ── Helpers ──────────────────────────────────────────────
+
+function appendMsg(role, content) {
+  const avatar = role === 'user' ? '👤' : '✦';
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `<div class="msg-avatar">${avatar}</div><div class="msg-bubble">${escHtml(content)}</div>`;
+  chatEl.insertBefore(div, typingEl);
+  scrollChat();
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function scrollChat() { chatEl.scrollTop = chatEl.scrollHeight; }
+
+function setLoading(on) {
+  sendBtn.disabled = on;
+  typingEl.classList.toggle('active', on);
+  if (on) scrollChat();
+}
+
+// ── Send message ──────────────────────────────────────────
+
+async function sendMessage(content) {
+  if (!content.trim()) return;
+  appendMsg('user', content);
+  inputEl.value = '';
+  inputEl.style.height = 'auto';
+  setLoading(true);
+
+  try {
+    const res = await fetch(SEND_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+      body: JSON.stringify({ session_id: SESSION_ID, content }),
+    });
+    const data = await res.json();
+    setLoading(false);
+    appendMsg('assistant', data.reply || 'Понял!');
+    if (data.ready) {
+      renderSidebar(data);
+    }
+  } catch(e) {
+    setLoading(false);
+    appendMsg('assistant', 'Произошла ошибка сети. Попробуйте ещё раз.');
+  }
+}
+
+// ── Revise plan ───────────────────────────────────────────
+
+async function revise(content) {
+  appendMsg('user', content);
+  setLoading(true);
+  try {
+    const res = await fetch(REVISE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+      body: JSON.stringify({ session_id: SESSION_ID, revision: content }),
+    });
+    const data = await res.json();
+    setLoading(false);
+    appendMsg('assistant', data.reply || 'Маршрут обновлён!');
+    if (data.trip_plan) renderTripPlan(data.trip_plan);
+  } catch(e) {
+    setLoading(false);
+    appendMsg('assistant', 'Не удалось обновить маршрут.');
+  }
+}
+
+// ── Render sidebar ────────────────────────────────────────
+
+function renderSidebar(data) {
+  emptyState.style.display = 'none';
+  if (data.guides && data.guides.length) renderGuides(data.guides);
+  if (data.weather && Object.keys(data.weather).length) renderWeather(data.weather);
+  if (data.trip_plan) renderTripPlan(data.trip_plan);
+}
+
+function renderGuides(guides) {
+  const card = document.getElementById('guidesCard');
+  const list = document.getElementById('guidesList');
+  list.innerHTML = '';
+  guides.forEach(g => {
+    const initials = g.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+    const stars = '★'.repeat(Math.round(g.rating || 0));
+    const check = g.is_verified ? '<span style="color:#4ade80;font-size:0.7rem">✓ Проверен</span>' : '';
+    list.innerHTML += `
+      <div class="guide-card">
+        <div class="guide-avatar">${initials}</div>
+        <div class="guide-info">
+          <div class="guide-name">${g.name} ${check}</div>
+          <div class="guide-city">📍 ${g.city || '—'} &nbsp; <span style="color:#f59e0b">${stars}</span></div>
+          <div style="font-size:0.75rem;color:rgba(255,255,255,0.45);margin-top:2px">${g.reason.slice(0,80)}</div>
+        </div>
+        <div class="guide-score">${Math.round(g.score*100)}%</div>
+      </div>`;
   });
+  card.style.display = 'block';
+}
+
+function renderWeather(w) {
+  const card = document.getElementById('weatherCard');
+  document.getElementById('weatherContent').innerHTML = `
+    <div class="weather-row">
+      <div class="weather-temp">${w.temp}°C</div>
+      <div><div class="weather-desc">${w.city || ''}</div><div class="weather-desc">${w.desc || ''}</div></div>
+    </div>
+    <div class="weather-advice-text">${w.advice || ''}</div>`;
+  card.style.display = 'block';
+}
+
+function renderTripPlan(plan) {
+  if (plan.days && plan.days.length) {
+    const itEl = document.getElementById('itineraryContent');
+    itEl.innerHTML = '';
+    plan.days.forEach(day => {
+      const items = (day.items || []).map(item =>
+        `<div class="day-item"><span class="day-time">${item.time||''}</span><span>${item.activity}${item.tip ? ' — <em>'+item.tip+'</em>' : ''}</span></div>`
+      ).join('');
+      itEl.innerHTML += `<div class="day-block"><div class="day-title">${day.title || 'День '+day.day}</div>${items}</div>`;
+    });
+    document.getElementById('itineraryCard').style.display = 'block';
+  }
+
+  if (plan.budget && Object.keys(plan.budget).length) {
+    const b = plan.budget;
+    const budEl = document.getElementById('budgetContent');
+    budEl.innerHTML = '';
+    if (b.guide_fee) budEl.innerHTML += `<div class="budget-row"><span class="label">Гид</span><span class="val">${b.guide_fee}</span></div>`;
+    if (b.food) budEl.innerHTML += `<div class="budget-row"><span class="label">Питание</span><span class="val">${b.food}</span></div>`;
+    if (b.transport) budEl.innerHTML += `<div class="budget-row"><span class="label">Транспорт</span><span class="val">${b.transport}</span></div>`;
+    if (b.total) budEl.innerHTML += `<div class="budget-row budget-total"><span class="label">Итого</span><span class="val">${b.total}</span></div>`;
+    document.getElementById('budgetCard').style.display = 'block';
+  }
+
+  if (plan.local_tips && plan.local_tips.length) {
+    const tipsEl = document.getElementById('tipsList');
+    tipsEl.innerHTML = plan.local_tips.map(t => `<li>${t}</li>`).join('');
+    document.getElementById('tipsCard').style.display = 'block';
+  }
+}
+
+// ── Events ────────────────────────────────────────────────
+
+sendBtn.addEventListener('click', () => {
+  const content = inputEl.value.trim();
+  if (content) sendMessage(content);
+});
+
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    const content = inputEl.value.trim();
+    if (content) sendMessage(content);
+  }
+});
+
+// Auto-resize textarea
+inputEl.addEventListener('input', () => {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+});
+
+// Quick buttons
+document.querySelectorAll('.quick-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const msg = btn.dataset.msg;
+    const planVisible = document.getElementById('itineraryCard').style.display !== 'none';
+    if (planVisible) {
+      revise(msg);
+    } else {
+      inputEl.value = msg;
+      inputEl.dispatchEvent(new Event('input'));
+    }
+  });
+});
+
+// Scroll to bottom on load
+scrollChat();
+
+{% if trip_plan %}
+// Restore existing plan on page reload
+const existingPlan = {{ trip_plan.json_result|default_if_none:"{}" |safe }};
+if (existingPlan && Object.keys(existingPlan).length) {
+  emptyState.style.display = 'none';
+  renderTripPlan(existingPlan);
+}
+{% endif %}
 </script>
 {% endblock %}

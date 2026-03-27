@@ -18,6 +18,7 @@ class ChatMessage(models.Model):
     )
     text = models.TextField('Сообщение')
     created_at = models.DateTimeField('Отправлено', auto_now_add=True)
+    is_read = models.BooleanField('Прочитано', default=False)
 
     class Meta:
         verbose_name = 'Сообщение'

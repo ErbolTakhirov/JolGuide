@@ -151,7 +151,11 @@ class Command(BaseCommand):
                 )
                 data['user'] = fake_user
             
-            guide_objects.append(GuideProfile.objects.create(**data))
+            profile, _ = GuideProfile.objects.update_or_create(
+                user=data.pop('user'),
+                defaults=data,
+            )
+            guide_objects.append(profile)
 
         azamat = guide_objects[0]
         elena = guide_objects[1]

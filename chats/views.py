@@ -25,7 +25,7 @@ def inbox(request):
     partner_ids = set(sent_to) | set(received_from)
     partners = User.objects.filter(pk__in=partner_ids)
 
-    # Для каждого — последнее сообщение
+    # Для каждого — последнее сообщение + кол-во непрочитанных
     conversations = []
     for partner in partners:
         last_msg = (
@@ -36,7 +36,16 @@ def inbox(request):
             .order_by('-created_at')
             .first()
         )
-        conversations.append({'partner': partner, 'last_msg': last_msg})
+        unread_count = ChatMessage.objects.filter(
+            sender=partner,
+            receiver=request.user,
+            is_read=False
+        ).count()
+        conversations.append({
+            'partner': partner,
+            'last_msg': last_msg,
+            'unread_count': unread_count
+        })
 
     # Сортируем по дате последнего сообщения
     conversations.sort(key=lambda x: x['last_msg'].created_at, reverse=True)
@@ -48,6 +57,13 @@ def inbox(request):
 def chat_room(request, user_id):
     """Чат-комната между текущим пользователем и другим пользователем."""
     other_user = get_object_or_404(User, pk=user_id)
+
+    # Помечаем сообщения от собеседника как прочитанные
+    ChatMessage.objects.filter(
+        sender=other_user,
+        receiver=request.user,
+        is_read=False
+    ).update(is_read=True)
 
     if request.method == 'POST':
         text = request.POST.get('text', '').strip()

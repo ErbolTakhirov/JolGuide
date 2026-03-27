@@ -3,6 +3,10 @@ Django settings for JolGit project.
 """
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Загружаем переменные окружения из .env
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -105,6 +109,12 @@ LANGUAGE_CODE = 'ru'
 TIME_ZONE = 'Asia/Bishkek'
 USE_I18N = True
 USE_TZ = True
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "jolgit-matching",
+    }
+}
 
 # ---------- Static & Media ----------
 STATIC_URL = '/static/'
@@ -123,8 +133,7 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
-# ---------- Gemini API ----------
-GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
-
-# ---------- DeepSeek API ----------
-DEEPSEEK_API_KEY = os.environ.get('DEEPSEEK_API_KEY', '')
+# ---------- AI APIs ----------
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')  # legacy
+OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY', '')
+WEATHER_API_KEY = os.environ.get('WEATHER_API_KEY', '')

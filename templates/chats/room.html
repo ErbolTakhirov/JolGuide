@@ -61,6 +61,41 @@
     </div>
   </div>
 </section>
+
+<script>
+  // Простейший polling каждые 3 секунды
+  // В идеале возвращать только новые сообщения через JSON, но для MVP достаточно перезагрузки
+  // или просто фонового запроса. Для скорости здесь сделаем проверку новых сообщений.
+  
+  let lastMessageCount = {{ chat_messages|length }};
+  
+  function checkNewMessages() {
+    fetch(window.location.href)
+      .then(response => response.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newMessages = doc.querySelectorAll('.chat-bubble');
+        
+        if (newMessages.length > lastMessageCount) {
+          // Обновляем контейнер сообщений
+          const chatBody = document.getElementById('chatMessages');
+          chatBody.innerHTML = doc.getElementById('chatMessages').innerHTML;
+          lastMessageCount = newMessages.length;
+          // Скроллим вниз
+          chatBody.scrollTop = chatBody.scrollHeight;
+        }
+      });
+  }
+
+  // Скролл вниз при загрузке
+  window.onload = () => {
+    const chatBody = document.getElementById('chatMessages');
+    chatBody.scrollTop = chatBody.scrollHeight;
+  };
+
+  setInterval(checkNewMessages, 3000);
+</script>
 {% endblock %}
 
 {% block extra_js %}

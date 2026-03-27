@@ -39,6 +39,11 @@
                   {% endif %}
                   {{ conv.last_msg.text }}
                 </p>
+                {% if conv.unread_count > 0 %}
+                <span class="badge rounded-pill bg-danger ms-auto">
+                  {{ conv.unread_count }}
+                </span>
+                {% endif %}
               </div>
               <i class="bi bi-chevron-right text-muted flex-shrink-0"></i>
             </div>

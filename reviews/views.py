@@ -26,11 +26,6 @@ def _has_reviewed(user, guide):
     return Review.objects.filter(tourist=user, guide=guide).exists()
 
 
-def _recalc_rating(guide):
-    """Пересчитываем средний рейтинг гида."""
-    result = Review.objects.filter(guide=guide).aggregate(avg=Avg('rating'))
-    guide.rating = round(result['avg'] or 0.0, 2)
-    guide.save(update_fields=['rating'])
 
 
 @login_required
@@ -60,7 +55,7 @@ def add_review(request, guide_id):
             rating=int(rating_str),
             text=text,
         )
-        _recalc_rating(guide)
+        # _recalc_rating больше не нужен, работают сигналы в models.py
         messages.success(request, 'Спасибо за ваш отзыв!')
 
     return redirect('guides:detail', guide_id=guide_id)

@@ -16,6 +16,28 @@
   --card-shadow-hover: 0 8px 40px rgba(108, 92, 231, .15);
   --radius: 16px;
   --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  
+  /* Theme-specific Colors */
+  --bg-color: #FAFBFF;
+  --text-color: #2D3436;
+  --hero-bg: linear-gradient(160deg, #FAFBFF 0%, #E8E4FF 50%, #D4F0F0 100%);
+  --match-hero-bg: linear-gradient(160deg, #FAFBFF 0%, #EDE8FF 60%, #FAFBFF 100%);
+  --footer-bg: #2D3436;
+  --footer-text: #B2BEC3;
+}
+
+[data-bs-theme="dark"] {
+  --glass-bg: rgba(20, 22, 33, .75);
+  --glass-border: rgba(255, 255, 255, .08);
+  --card-shadow: 0 4px 24px rgba(0, 0, 0, .2);
+  --bg-color: #0f1117;
+  --text-color: #f8fafc;
+  --hero-bg: linear-gradient(160deg, #0f1117 0%, #171529 50%, #151e29 100%);
+  --match-hero-bg: linear-gradient(160deg, #0f1117 0%, #1b1836 60%, #0f1117 100%);
+  --footer-bg: #0a0b0f;
+  --footer-text: #64748b;
+  --bs-body-bg: var(--bg-color);
+  --bs-body-color: var(--text-color);
 }
 
 /* ── Base ── */
@@ -24,8 +46,9 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #FAFBFF;
-  color: #2D3436;
+  background: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
 }
 
 main { flex: 1; }
@@ -36,10 +59,10 @@ main { flex: 1; }
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--glass-border);
-  transition: box-shadow .3s ease;
+  transition: box-shadow .3s ease, background-color 0.3s, border-color 0.3s;
 }
 #mainNav.scrolled {
-  box-shadow: 0 2px 20px rgba(0,0,0,.06);
+  box-shadow: 0 2px 20px rgba(0,0,0,.15);
 }
 .navbar-brand {
   font-size: 1.4rem;
@@ -83,7 +106,7 @@ main { flex: 1; }
   border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   box-shadow: var(--card-shadow);
-  transition: transform .25s ease, box-shadow .25s ease;
+  transition: transform .25s ease, box-shadow .25s ease, background-color 0.3s, border-color 0.3s;
 }
 .card-glass:hover {
   transform: translateY(-4px);
@@ -98,9 +121,10 @@ main { flex: 1; }
 /* ── Hero ── */
 .hero-section {
   position: relative;
-  background: linear-gradient(160deg, #FAFBFF 0%, #E8E4FF 50%, #D4F0F0 100%);
+  background: var(--hero-bg);
   padding: 5rem 0 4rem;
   overflow: hidden;
+  transition: background 0.3s;
 }
 .hero-section::before {
   content: '';
